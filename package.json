@@ -1,9 +1,9 @@
 {
-  "name": "excel-mcp",
+  "name": "fast-excel",
   "version": "0.1.0",
   "type": "module",
   "bin": {
-    "excel-mcp": "./dist/index.js"
+    "fast-excel": "./dist/index.js"
   },
   "scripts": {
     "build": "bun build src/index.ts --outdir dist --target node",

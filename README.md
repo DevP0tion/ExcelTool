@@ -1,4 +1,4 @@
-# excel-mcp
+# fast-excel
 
 PowerShell COM 자동화 기반 Excel MCP 서버.
 
@@ -11,17 +11,17 @@ PowerShell COM 자동화 기반 Excel MCP 서버.
 ### 권장: Claude Code 플러그인
 
 ```
-/plugin install /path/to/excel-mcp
+/plugin install /path/to/fast-excel
 ```
 
-플러그인으로 설치하면 `bunx excel-mcp@latest`가 자동 실행됩니다.
+플러그인으로 설치하면 `bunx fast-excel@latest`가 자동 실행됩니다.
 
 ### 비권장: 모듈 단독 설치
 
 ```bash
-bun add -g excel-mcp
+bun add -g fast-excel
 # 또는
-npm install -g excel-mcp
+npm install -g fast-excel
 ```
 
 > ⚠️ 단독 설치 시 Claude Code와의 연결은 별도로 MCP 설정을 직접 구성해야 합니다.
