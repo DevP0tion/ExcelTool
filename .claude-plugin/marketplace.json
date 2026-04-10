@@ -1,0 +1,18 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "ExcelTool",
+  "version": "1.0.0",
+  "description": "PowerShell COM 자동화 기반 Excel MCP 도구 모음",
+  "owner": {
+    "name": "DevP0tion"
+  },
+  "plugins": [
+    {
+      "name": "xlmcp",
+      "description": "PowerShell COM을 통한 Excel 자동화 MCP 서버. 열린 Excel 인스턴스를 자동 감지하여 연결합니다.",
+      "source": "./plugins/xlmcp",
+      "version": "0.1.0",
+      "category": "productivity"
+    }
+  ]
+}
