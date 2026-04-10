@@ -67,15 +67,37 @@ npm install -g excel-mcp
 
 ```
 src/
-├── index.ts              # MCP 서버 진입점 (stdio)
+├── index.ts
 ├── services/
-│   ├── powershell.ts     # PowerShell COM 래퍼 + 워크북 자동 감지
-│   └── utils.ts          # 유틸리티
-├── tools/
-│   ├── workbook.ts       # 워크북 관리 도구
-│   ├── sheet.ts          # 시트 관리 도구
-│   ├── cell.ts           # 셀/범위 읽기·쓰기 도구
-│   └── format.ts         # 서식 도구
-└── schemas/
-    └── common.ts         # 공통 Zod 스키마
+│   ├── powershell.ts
+│   └── utils.ts
+├── schemas/
+│   └── common.ts
+└── tools/
+    ├── workbook/
+    │   ├── index.ts
+    │   ├── list-open-workbooks.tool.ts
+    │   ├── get-active-workbook.tool.ts
+    │   ├── create-workbook.tool.ts
+    │   ├── save-workbook.tool.ts
+    │   └── close-workbook.tool.ts
+    ├── sheet/
+    │   ├── index.ts
+    │   ├── list-sheets.tool.ts
+    │   ├── create-sheet.tool.ts
+    │   ├── delete-sheet.tool.ts
+    │   ├── copy-sheet.tool.ts
+    │   └── rename-sheet.tool.ts
+    ├── cell/
+    │   ├── index.ts
+    │   ├── read-cell.tool.ts
+    │   ├── write-cell.tool.ts
+    │   ├── read-range.tool.ts
+    │   └── write-range.tool.ts
+    └── format/
+        ├── index.ts
+        ├── format-range.tool.ts
+        ├── set-column-width.tool.ts
+        ├── set-row-height.tool.ts
+        └── merge-cells.tool.ts
 ```

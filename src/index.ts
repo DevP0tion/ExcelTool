@@ -2,10 +2,10 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { dispose } from "./services/powershell.js";
-import { registerWorkbookTools } from "./tools/workbook.js";
-import { registerSheetTools } from "./tools/sheet.js";
-import { registerCellTools } from "./tools/cell.js";
-import { registerFormatTools } from "./tools/format.js";
+import { registerWorkbookTools } from "./tools/workbook/index.js";
+import { registerSheetTools } from "./tools/sheet/index.js";
+import { registerCellTools } from "./tools/cell/index.js";
+import { registerFormatTools } from "./tools/format/index.js";
 
 const server = new McpServer({
   name: "excel-mcp",
