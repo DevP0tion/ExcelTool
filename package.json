@@ -1,9 +1,9 @@
 {
-  "name": "fast-excel",
+  "name": "xlmcp",
   "version": "0.1.0",
   "type": "module",
   "bin": {
-    "fast-excel": "dist/index.js"
+    "xlmcp": "dist/index.js"
   },
   "scripts": {
     "build": "bun build src/index.ts --outdir dist --target node",

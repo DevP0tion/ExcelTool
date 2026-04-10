@@ -2,7 +2,7 @@
   "mcpServers": {
     "excel": {
       "command": "bunx",
-      "args": ["fast-excel@latest"]
+      "args": ["xlmcp@latest"]
     }
   }
 }

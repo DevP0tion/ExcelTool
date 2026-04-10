@@ -1,5 +1,5 @@
 {
-  "name": "fast-excel",
+  "name": "xlmcp",
   "description": "PowerShell COM을 통한 Excel 자동화 MCP 서버",
   "version": "0.1.0"
 }
