@@ -50,7 +50,18 @@ export function register(server: McpServer) {
         border: z
           .enum(["thin", "medium", "thick", "none"])
           .optional()
-          .describe("테두리 스타일 (전체 테두리)"),
+          .describe("전체 테두리 스타일 (간편 옵션)"),
+        borderEdges: z
+          .object({
+            left: z.enum(["thin", "medium", "thick", "none"]).optional(),
+            right: z.enum(["thin", "medium", "thick", "none"]).optional(),
+            top: z.enum(["thin", "medium", "thick", "none"]).optional(),
+            bottom: z.enum(["thin", "medium", "thick", "none"]).optional(),
+            outline: z.enum(["thin", "medium", "thick", "none"]).optional(),
+            inside: z.enum(["thin", "medium", "thick", "none"]).optional(),
+          })
+          .optional()
+          .describe("개별 테두리 제어. border와 함께 사용 시 borderEdges가 우선"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },
@@ -83,8 +94,31 @@ export function register(server: McpServer) {
       }
       if (fmt.wrapText !== undefined) cmds.push(`$r.WrapText = $${fmt.wrapText}`);
       if (fmt.numberFormat) cmds.push(`$r.NumberFormat = '${psEscape(fmt.numberFormat)}'`);
-      if (fmt.border) {
-        const weightMap: Record<string, number> = { thin: 2, medium: -4138, thick: 4, none: 0 };
+
+      const weightMap: Record<string, number> = { thin: 2, medium: -4138, thick: 4 };
+      const edgeIdxMap: Record<string, number[]> = {
+        left: [7], right: [10], top: [8], bottom: [9],
+        outline: [7, 8, 9, 10],
+        inside: [11, 12],
+      };
+
+      function applyBorder(indices: number[], style: string) {
+        if (style === "none") {
+          for (const idx of indices) cmds.push(`$r.Borders.Item(${idx}).LineStyle = -4142`);
+        } else {
+          for (const idx of indices) {
+            cmds.push(`$r.Borders.Item(${idx}).LineStyle = 1`);
+            cmds.push(`$r.Borders.Item(${idx}).Weight = ${weightMap[style]}`);
+          }
+        }
+      }
+
+      if (fmt.borderEdges) {
+        for (const [edge, style] of Object.entries(fmt.borderEdges)) {
+          if (!style || !edgeIdxMap[edge]) continue;
+          applyBorder(edgeIdxMap[edge], style);
+        }
+      } else if (fmt.border) {
         if (fmt.border === "none") {
           cmds.push(`$r.Borders.LineStyle = -4142`);
         } else {

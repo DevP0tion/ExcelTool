@@ -6,10 +6,10 @@ import { workbookParam, sheetParam } from "../../schemas/common.js";
 
 export function register(server: McpServer) {
   server.registerTool(
-    "excel_read_range",
+    "excel_read_range_formulas",
     {
-      title: "범위 읽기",
-      description: "셀 범위의 값을 2D 배열로 반환합니다. 범위를 생략하면 UsedRange 전체를 읽습니다.",
+      title: "범위 수식 읽기",
+      description: "셀 범위의 수식을 2D 배열로 반환합니다. 수식이 없는 셀은 값을 반환합니다.",
       inputSchema: {
         workbook: workbookParam,
         sheet: sheetParam,
@@ -29,27 +29,14 @@ export function register(server: McpServer) {
         $r = ${rangeExpr}
         $rows = $r.Rows.Count
         $cols = $r.Columns.Count
-        $values = $r.Value2
         $data = @()
-        if ($rows -eq 1 -and $cols -eq 1) {
-          $v = $values
-          $data = ,@(,$(if ($v -ne $null) { $v } else { $null }))
-        } elseif ($rows -eq 1) {
+        for ($i = 1; $i -le $rows; $i++) {
           $row = @()
           for ($j = 1; $j -le $cols; $j++) {
-            $v = $values[1,$j]
-            $row += $(if ($v -ne $null) { $v } else { $null })
+            $f = $r.Cells.Item($i, $j).Formula
+            $row += if ($f -ne $null) { $f.ToString() } else { "" }
           }
-          $data = ,@($row)
-        } else {
-          for ($i = 1; $i -le $rows; $i++) {
-            $row = @()
-            for ($j = 1; $j -le $cols; $j++) {
-              $v = $values[$i,$j]
-              $row += $(if ($v -ne $null) { $v } else { $null })
-            }
-            $data += ,@($row)
-          }
+          $data += ,@($row)
         }
         @{
           Range = $r.Address()

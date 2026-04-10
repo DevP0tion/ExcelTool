@@ -45,8 +45,35 @@ export async function getShell(): Promise<PowerShell> {
 
 export async function runPS(script: string): Promise<string> {
   const ps = await getShell();
-  const result = await ps.invoke(script);
-  return result.raw ?? "";
+  const wrapped = `
+    try {
+      ${script}
+    } catch {
+      [Console]::Error.WriteLine(($_ | ConvertTo-Json -Compress))
+      throw $_
+    }
+  `;
+  try {
+    const result = await ps.invoke(wrapped);
+    return result.raw ?? "";
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    // PowerShell InvocationError에서 구조화된 메시지 추출 시도
+    try {
+      const parsed = JSON.parse(msg);
+      throw new Error(JSON.stringify({
+        error: true,
+        message: parsed.Exception?.Message ?? parsed.FullyQualifiedErrorId ?? msg,
+        type: parsed.Exception?.GetType?.()?.Name ?? "PowerShellError",
+      }));
+    } catch {
+      throw new Error(JSON.stringify({
+        error: true,
+        message: msg.replace(/\r?\n/g, " ").trim(),
+        type: "PowerShellError",
+      }));
+    }
+  }
 }
 
 export async function dispose(): Promise<void> {

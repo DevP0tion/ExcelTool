@@ -49,7 +49,12 @@ export function register(server: McpServer) {
             if ($val -match '^\=') {
               $ws.Cells.Item($start.Row + $i, $start.Column + $j).Formula = $val
             } else {
-              $arr[$i,$j] = $val
+              $num = 0.0
+              if ([double]::TryParse($val, [ref]$num)) {
+                $arr[$i,$j] = $num
+              } else {
+                $arr[$i,$j] = $val
+              }
             }
           }
         }
