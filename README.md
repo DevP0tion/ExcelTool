@@ -8,11 +8,19 @@ PowerShell COM 자동화 기반 Excel MCP 서버.
 
 ## 설치
 
-```
-/plugin install /path/to/xlmcp
+### 세션별 로드
+
+```bash
+claude --plugin-dir /path/to/ExcelTool
 ```
 
-플러그인으로 설치하면 `bunx xlmcp@latest`가 자동 실행됩니다.
+### 영구 설치
+
+```bash
+claude plugins install /path/to/ExcelTool
+```
+
+플러그인이 활성화되면 `bunx xlmcp@latest`가 자동 실행됩니다.
 
 
 ## 도구 목록 (18개)
