@@ -31,6 +31,22 @@ Excel을 직접 제어하는 MCP 서버.
 - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
 
+## 환경 변수
+
+| 변수 | 기본값 | 설명 |
+|---|---|---|
+| `XLMCP_POOL_SIZE` | `4` | PowerShell 세션 풀 크기 (General Pool). 최소 1 |
+
+```json
+"excel": {
+  "command": "bunx",
+  "args": ["xlmcp@latest"],
+  "env": {
+    "XLMCP_POOL_SIZE": "2"
+  }
+}
+```
+
 ## 도구 (40개)
 
 ### Workbook (6)
