@@ -31,7 +31,7 @@ export function register(server: McpServer) {
         $wb = Resolve-Workbook ${wbName}
         $ws = Resolve-Sheet $wb ${shName}
         ${rangeExpr}.${cmd}
-      `);
+      `, { exclusive: true });
       return textContent({ success: true });
     }
   );

@@ -36,7 +36,7 @@ export function register(server: McpServer) {
         $srcWs.Range('${psEscape(sourceRange)}').Copy()
         $dstWs.Range('${psEscape(destCell)}').PasteSpecial(${pasteMap[pasteType]})
         $excel.CutCopyMode = $false
-      `);
+      `, { exclusive: true });
       return textContent({ success: true });
     }
   );

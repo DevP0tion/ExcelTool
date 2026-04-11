@@ -28,14 +28,14 @@ export function register(server: McpServer) {
           $ws.Range('${psEscape(cell)}').Select()
           $excel.ActiveWindow.FreezePanes = $false
           $excel.ActiveWindow.FreezePanes = $true
-        `);
+        `, { exclusive: true });
       } else {
         await runPS(`
           $wb = Resolve-Workbook ${wbName}
           $ws = Resolve-Sheet $wb ${shName}
           $ws.Activate()
           $excel.ActiveWindow.FreezePanes = $false
-        `);
+        `, { exclusive: true });
       }
       return textContent({ success: true });
     }
