@@ -1,34 +1,54 @@
 # ExcelTool
 
-Claude Code에서 Excel을 직접 제어하는 MCP 서버.
+Excel을 직접 제어하는 MCP 서버.
 
 실행 중인 Excel 인스턴스에 자동 연결되며, 워크북·시트 파라미터 생략 시 현재 활성 대상을 사용합니다.
 
 - **런타임**: Windows + PowerShell + Excel COM
-- **전송**: stdio (Claude Code 플러그인)
+- **전송**: stdio
 
 ## 설치
 
-Claude Code에서:
+### Claude Code (플러그인)
 
 ```
 /plugin marketplace add DevP0tion/ExcelTool
 /plugin install xlmcp@ExcelTool
 ```
 
-## 도구 (18개)
+### Claude Desktop
 
-### Workbook
+`claude_desktop_config.json`에 추가:
+
+```json
+{
+  "mcpServers": {
+    "excel": {
+      "command": "bunx",
+      "args": ["xlmcp@latest"]
+    }
+  }
+}
+```
+
+설정 파일 위치:
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+## 도구 (39개)
+
+### Workbook (6)
 
 | 도구 | 설명 |
 |---|---|
 | `excel_list_open_workbooks` | 열린 워크북 목록 반환 (이름, 경로, 시트 수) |
 | `excel_get_active_workbook` | 활성 워크북의 이름, 경로, 시트 수, 활성 시트명 반환 |
 | `excel_create_workbook` | 새 빈 워크북 생성. `savePath` 지정 시 즉시 저장 |
+| `excel_open_workbook` | 파일 경로로 워크북 열기. 이미 열려 있으면 활성화 |
 | `excel_save_workbook` | 워크북 저장. `savePath` 지정 시 다른 이름으로 저장 |
 | `excel_close_workbook` | 워크북 닫기. `save` 옵션으로 저장 여부 지정 |
 
-### Sheet
+### Sheet (5)
 
 | 도구 | 설명 |
 |---|---|
@@ -38,20 +58,69 @@ Claude Code에서:
 | `excel_copy_sheet` | 시트 복사. `newName`으로 복사본 이름 지정 가능 |
 | `excel_rename_sheet` | 시트 이름 변경 |
 
-### Cell / Range
+### Cell / Range (6)
 
 | 도구 | 설명 |
 |---|---|
 | `excel_read_cell` | 단일 셀의 값, 수식, 표시 텍스트, 표시 형식 반환 |
 | `excel_write_cell` | 단일 셀에 값 또는 수식 입력. `=`로 시작하면 수식 처리 |
-| `excel_read_range` | 범위를 2D 배열로 반환. 생략 시 UsedRange 전체 읽기 |
-| `excel_write_range` | 시작 셀부터 2D 배열 데이터 입력. 수식 혼합 가능 |
+| `excel_read_range` | 범위를 2D 배열로 반환. 타입 유지. 생략 시 UsedRange |
+| `excel_write_range` | 시작 셀부터 2D 배열 데이터 입력. 숫자 자동 감지, 수식 혼합 가능 |
+| `excel_read_range_formulas` | 범위의 수식을 2D 배열로 반환 |
+| `excel_clear_range` | 범위 삭제 (값만/서식만/전체) |
 
-### Format
+### Format (6)
 
 | 도구 | 설명 |
 |---|---|
-| `excel_format_range` | 서식 적용 — 폰트(이름/크기/굵기/기울임/색상), 배경색, 정렬, 줄바꿈, 테두리, 표시 형식 |
+| `excel_format_range` | 서식 적용 — 폰트, 배경색, 정렬, 테두리(전체/개별), 표시 형식 |
 | `excel_set_column_width` | 열 너비 설정. `auto`로 자동 맞춤 가능 |
 | `excel_set_row_height` | 행 높이 설정. `auto`로 자동 맞춤 가능 |
 | `excel_merge_cells` | 셀 병합 또는 병합 해제 |
+| `excel_read_cell_format` | 셀의 현재 서식 정보 반환 (폰트, 색상, 정렬, 테두리, 병합 여부) |
+| `excel_write_cell_format` | 서식 데이터 기반 일괄 적용. `read_cell_format` 출력으로 서식 복제 가능 |
+
+### Data (5)
+
+| 도구 | 설명 |
+|---|---|
+| `excel_insert_delete_rows_cols` | 행 또는 열 삽입·삭제 |
+| `excel_copy_paste_range` | 범위 복사/붙여넣기 (값만/수식만/서식만/전체) |
+| `excel_find_replace` | 시트 내 찾기/바꾸기. 찾기만도 가능 |
+| `excel_sort_range` | 범위를 지정 열 기준으로 정렬 |
+| `excel_auto_filter` | 자동 필터 설정/해제/조건 적용 |
+
+### Table (4)
+
+| 도구 | 설명 |
+|---|---|
+| `excel_list_tables` | 시트 내 표(ListObject) 목록 반환 |
+| `excel_create_table` | 범위를 Excel 표로 변환 |
+| `excel_edit_table` | 표 이름, 스타일, 크기 변경, 행/열 추가, 요약 행 토글 |
+| `excel_delete_table` | 표 삭제 (데이터 유지 또는 함께 삭제) |
+
+### Chart (1)
+
+| 도구 | 설명 |
+|---|---|
+| `excel_create_chart` | 차트 생성 (line/bar/column/pie/scatter/area) |
+
+### Pivot (1)
+
+| 도구 | 설명 |
+|---|---|
+| `excel_create_pivot_table` | 피벗 테이블 생성. 행/열/데이터 필드 및 집계 함수 지정 |
+
+### Validation (2)
+
+| 도구 | 설명 |
+|---|---|
+| `excel_set_data_validation` | 데이터 유효성 검사 (드롭다운, 숫자 범위, 수식 등) |
+| `excel_set_conditional_format` | 조건부 서식 (셀 값, 수식, 색조, 데이터 막대) |
+
+### View (2)
+
+| 도구 | 설명 |
+|---|---|
+| `excel_freeze_panes` | 틀 고정/해제 |
+| `excel_named_range` | 이름 정의 조회/생성/삭제 |
