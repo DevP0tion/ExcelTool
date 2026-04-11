@@ -109,7 +109,14 @@ class Session {
 
   static async create(id: number): Promise<Session> {
     const session = new Session(id);
-    await session.init();
+    try {
+      await session.init();
+    } catch (err) {
+      // INIT_SCRIPT 실패 시 PS 프로세스 정리
+      session.alive = false;
+      try { await session.ps.dispose(); } catch { /* ignore */ }
+      throw err;
+    }
     return session;
   }
 
@@ -157,12 +164,28 @@ class SessionPool {
 
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
-  // ── 초기화 (1개만 생성) ──
+  // ── 초기화 (1개만 생성, 실패 시 정리) ──
   async init(): Promise<void> {
     if (this.initialized) return;
-    const first = await Session.create(this.nextGeneralId++);
-    this.generalPool = [first];
-    this.exclusiveSession = await Session.create(100);
+
+    let general: Session | null = null;
+    let exclusive: Session | null = null;
+
+    try {
+      general = await Session.create(this.nextGeneralId++);
+      exclusive = await Session.create(100);
+    } catch (err) {
+      // 부분 성공 세션 정리
+      if (general) {
+        this.nextGeneralId--;
+        await general.dispose();
+      }
+      if (exclusive) await exclusive.dispose();
+      throw err;
+    }
+
+    this.generalPool = [general];
+    this.exclusiveSession = exclusive;
     this.heartbeatTimer = setInterval(() => this.heartbeat(), HEARTBEAT_INTERVAL);
     this.initialized = true;
   }

@@ -38,4 +38,9 @@ process.on("SIGINT", async () => {
   process.exit(0);
 });
 
+process.on("SIGTERM", async () => {
+  await dispose();
+  process.exit(0);
+});
+
 await server.connect(transport);
