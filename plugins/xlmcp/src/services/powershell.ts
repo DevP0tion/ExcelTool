@@ -124,13 +124,23 @@ class Session {
   }
 }
 
+// ── 작업 큐 항목 ──
+interface QueuedTask {
+  script: string;
+  resolve: (v: string) => void;
+  reject: (e: Error) => void;
+  enqueuedAt: number;
+}
+
 // ── 세션 풀 ──
 class SessionPool {
   private generalPool: Session[] = [];
   private exclusiveSession: Session | null = null;
   private roundRobinIndex = 0;
   private initialized = false;
+  private nextGeneralId = 0;
 
+  // exclusive
   private exclusiveRunning = false;
   private exclusiveQueue: Array<{
     script: string;
@@ -140,17 +150,18 @@ class SessionPool {
   private generalActiveCount = 0;
   private generalDrainResolve: (() => void) | null = null;
 
-  private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+  // 작업 큐
+  private generalQueue: QueuedTask[] = [];
+  private totalProcessed = 0;
+  private totalQueued = 0;
 
-  private nextGeneralId = 0;
+  private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
   // ── 초기화 (1개만 생성) ──
   async init(): Promise<void> {
     if (this.initialized) return;
-
     const first = await Session.create(this.nextGeneralId++);
     this.generalPool = [first];
-
     this.exclusiveSession = await Session.create(100);
     this.heartbeatTimer = setInterval(() => this.heartbeat(), HEARTBEAT_INTERVAL);
     this.initialized = true;
@@ -162,8 +173,25 @@ class SessionPool {
     if (this.exclusiveRunning) {
       await this.waitForExclusiveEnd();
     }
-    const session = await this.pickGeneral();
-    return this.invokeOnSession(session, script, false);
+
+    // 유휴 세션 탐색
+    const idle = this.findIdle();
+    if (idle) {
+      return this.invokeOnSession(idle, script, false);
+    }
+
+    // 상한 미도달 → 새 세션 생성
+    if (this.generalPool.length < POOL_SIZE) {
+      const newSession = await Session.create(this.nextGeneralId++);
+      this.generalPool.push(newSession);
+      return this.invokeOnSession(newSession, script, false);
+    }
+
+    // 상한 도달 → 큐에 대기
+    this.totalQueued++;
+    return new Promise<string>((resolve, reject) => {
+      this.generalQueue.push({ script, resolve, reject, enqueuedAt: Date.now() });
+    });
   }
 
   // ── exclusive 실행 ──
@@ -179,13 +207,11 @@ class SessionPool {
 
   private async runExclusive(script: string): Promise<string> {
     this.exclusiveRunning = true;
-
     if (this.generalActiveCount > 0) {
       await new Promise<void>((resolve) => {
         this.generalDrainResolve = resolve;
       });
     }
-
     try {
       return await this.invokeOnSession(this.exclusiveSession!, script, true);
     } finally {
@@ -206,7 +232,9 @@ class SessionPool {
   ): Promise<string> {
     if (!isExclusive) this.generalActiveCount++;
     try {
-      return await session.invoke(script, INVOKE_TIMEOUT);
+      const result = await session.invoke(script, INVOKE_TIMEOUT);
+      this.totalProcessed++;
+      return result;
     } catch (err: unknown) {
       if (session.isProcessDead(err)) {
         await this.recoverSession(session, isExclusive);
@@ -219,15 +247,26 @@ class SessionPool {
           this.generalDrainResolve();
           this.generalDrainResolve = null;
         }
+        // 큐에서 다음 작업 디스패치
+        this.dispatchFromQueue(session);
       }
     }
   }
 
-  // ── 세션 선택 (lazy growth) ──
-  private async pickGeneral(): Promise<Session> {
-    const poolSize = this.generalPool.length;
+  // ── 큐 디스패치 ──
+  private dispatchFromQueue(freedSession: Session): void {
+    if (this.generalQueue.length === 0) return;
+    if (this.exclusiveRunning) return;
+    if (freedSession.busy || !freedSession.alive) return;
 
-    // 1. 유휴 세션 탐색
+    const task = this.generalQueue.shift()!;
+    this.invokeOnSession(freedSession, task.script, false)
+      .then(task.resolve, task.reject);
+  }
+
+  // ── 유휴 세션 탐색 ──
+  private findIdle(): Session | null {
+    const poolSize = this.generalPool.length;
     for (let i = 0; i < poolSize; i++) {
       const idx = (this.roundRobinIndex + i) % poolSize;
       if (!this.generalPool[idx].busy && this.generalPool[idx].alive) {
@@ -235,18 +274,7 @@ class SessionPool {
         return this.generalPool[idx];
       }
     }
-
-    // 2. 모두 busy + 상한 미도달 → 새 세션 생성
-    if (poolSize < POOL_SIZE) {
-      const newSession = await Session.create(this.nextGeneralId++);
-      this.generalPool.push(newSession);
-      return newSession;
-    }
-
-    // 3. 상한 도달 → 라운드 로빈 (node-powershell 내부 큐에 의존)
-    const session = this.generalPool[this.roundRobinIndex];
-    this.roundRobinIndex = (this.roundRobinIndex + 1) % poolSize;
-    return session;
+    return null;
   }
 
   // ── exclusive 대기 ──
@@ -288,12 +316,39 @@ class SessionPool {
     }
   }
 
+  // ── 상태 조회 ──
+  getStatus() {
+    return {
+      poolMaxSize: POOL_SIZE,
+      poolCurrentSize: this.generalPool.length,
+      sessions: this.generalPool.map((s) => ({
+        id: s.id,
+        busy: s.busy,
+        alive: s.alive,
+      })),
+      exclusive: this.exclusiveSession
+        ? { id: this.exclusiveSession.id, busy: this.exclusiveSession.busy, alive: this.exclusiveSession.alive }
+        : null,
+      exclusiveRunning: this.exclusiveRunning,
+      generalActiveCount: this.generalActiveCount,
+      generalQueueLength: this.generalQueue.length,
+      exclusiveQueueLength: this.exclusiveQueue.length,
+      totalProcessed: this.totalProcessed,
+      totalQueued: this.totalQueued,
+    };
+  }
+
   // ── 종료 ──
   async dispose(): Promise<void> {
     if (this.heartbeatTimer) {
       clearInterval(this.heartbeatTimer);
       this.heartbeatTimer = null;
     }
+    // 큐 잔여 작업 reject
+    for (const task of this.generalQueue) {
+      task.reject(new Error(JSON.stringify({ error: true, message: "풀 종료됨", type: "PoolDisposed" })));
+    }
+    this.generalQueue = [];
     await Promise.all([
       ...this.generalPool.map((s) => s.dispose()),
       this.exclusiveSession?.dispose() ?? Promise.resolve(),
@@ -331,6 +386,10 @@ export interface RunPSOptions {
 export async function runPS(script: string, options?: RunPSOptions): Promise<string> {
   if (options?.exclusive) return pool.executeExclusive(script);
   return pool.executeGeneral(script);
+}
+
+export function getPoolStatus() {
+  return pool.getStatus();
 }
 
 export async function dispose(): Promise<void> {
