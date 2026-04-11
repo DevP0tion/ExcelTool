@@ -216,7 +216,16 @@ class SessionPool {
       return await this.invokeOnSession(this.exclusiveSession!, script, true);
     } finally {
       const next = this.exclusiveQueue.shift();
-      if (next) {
+
+      if (next && this.generalQueue.length > 0) {
+        // general 큐 우선: exclusive 해제 → general flush → 완료 대기 → exclusive 재개
+        this.exclusiveRunning = false;
+        this.flushGeneralQueue();
+        this.waitForGeneralQuiet().then(() => {
+          this.runExclusive(next.script).then(next.resolve, next.reject);
+        });
+      } else if (next) {
+        // general 큐 없음: 바로 다음 exclusive 실행
         this.runExclusive(next.script).then(next.resolve, next.reject);
       } else {
         this.exclusiveRunning = false;
@@ -296,6 +305,17 @@ class SessionPool {
     return new Promise<void>((resolve) => {
       const check = () => {
         if (!this.exclusiveRunning) resolve();
+        else setTimeout(check, 50);
+      };
+      check();
+    });
+  }
+
+  // ── general 큐 + 활성 작업 완료 대기 ──
+  private waitForGeneralQuiet(): Promise<void> {
+    return new Promise<void>((resolve) => {
+      const check = () => {
+        if (this.generalQueue.length === 0 && this.generalActiveCount === 0) resolve();
         else setTimeout(check, 50);
       };
       check();
