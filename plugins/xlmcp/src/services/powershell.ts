@@ -142,13 +142,15 @@ class SessionPool {
 
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
-  // ── 초기화 ──
+  private nextGeneralId = 0;
+
+  // ── 초기화 (1개만 생성) ──
   async init(): Promise<void> {
     if (this.initialized) return;
 
-    this.generalPool = await Promise.all(
-      Array.from({ length: POOL_SIZE }, (_, i) => Session.create(i))
-    );
+    const first = await Session.create(this.nextGeneralId++);
+    this.generalPool = [first];
+
     this.exclusiveSession = await Session.create(100);
     this.heartbeatTimer = setInterval(() => this.heartbeat(), HEARTBEAT_INTERVAL);
     this.initialized = true;
@@ -160,7 +162,7 @@ class SessionPool {
     if (this.exclusiveRunning) {
       await this.waitForExclusiveEnd();
     }
-    const session = this.pickGeneral();
+    const session = await this.pickGeneral();
     return this.invokeOnSession(session, script, false);
   }
 
@@ -221,17 +223,29 @@ class SessionPool {
     }
   }
 
-  // ── 라운드 로빈 ──
-  private pickGeneral(): Session {
-    for (let i = 0; i < POOL_SIZE; i++) {
-      const idx = (this.roundRobinIndex + i) % POOL_SIZE;
+  // ── 세션 선택 (lazy growth) ──
+  private async pickGeneral(): Promise<Session> {
+    const poolSize = this.generalPool.length;
+
+    // 1. 유휴 세션 탐색
+    for (let i = 0; i < poolSize; i++) {
+      const idx = (this.roundRobinIndex + i) % poolSize;
       if (!this.generalPool[idx].busy && this.generalPool[idx].alive) {
-        this.roundRobinIndex = (idx + 1) % POOL_SIZE;
+        this.roundRobinIndex = (idx + 1) % poolSize;
         return this.generalPool[idx];
       }
     }
+
+    // 2. 모두 busy + 상한 미도달 → 새 세션 생성
+    if (poolSize < POOL_SIZE) {
+      const newSession = await Session.create(this.nextGeneralId++);
+      this.generalPool.push(newSession);
+      return newSession;
+    }
+
+    // 3. 상한 도달 → 라운드 로빈 (node-powershell 내부 큐에 의존)
     const session = this.generalPool[this.roundRobinIndex];
-    this.roundRobinIndex = (this.roundRobinIndex + 1) % POOL_SIZE;
+    this.roundRobinIndex = (this.roundRobinIndex + 1) % poolSize;
     return session;
   }
 
