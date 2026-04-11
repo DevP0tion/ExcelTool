@@ -220,6 +220,7 @@ class SessionPool {
         this.runExclusive(next.script).then(next.resolve, next.reject);
       } else {
         this.exclusiveRunning = false;
+        this.flushGeneralQueue();
       }
     }
   }
@@ -253,7 +254,7 @@ class SessionPool {
     }
   }
 
-  // ── 큐 디스패치 ──
+  // ── 큐 디스패치 (세션 1개 완료 시) ──
   private dispatchFromQueue(freedSession: Session): void {
     if (this.generalQueue.length === 0) return;
     if (this.exclusiveRunning) return;
@@ -262,6 +263,19 @@ class SessionPool {
     const task = this.generalQueue.shift()!;
     this.invokeOnSession(freedSession, task.script, false)
       .then(task.resolve, task.reject);
+  }
+
+  // ── 큐 일괄 디스패치 (exclusive 완료 시) ──
+  private flushGeneralQueue(): void {
+    if (this.generalQueue.length === 0) return;
+    for (const session of this.generalPool) {
+      if (this.generalQueue.length === 0) break;
+      if (!session.busy && session.alive) {
+        const task = this.generalQueue.shift()!;
+        this.invokeOnSession(session, task.script, false)
+          .then(task.resolve, task.reject);
+      }
+    }
   }
 
   // ── 유휴 세션 탐색 ──
