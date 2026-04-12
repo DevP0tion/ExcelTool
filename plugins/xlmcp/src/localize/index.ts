@@ -12,7 +12,9 @@ const locales: Record<string, LocaleData> = {
   ja_jp: jaJp as LocaleData,
 };
 
-let current: LocaleData = locales.ko_kr;
+const DEFAULT_LOCALE = "ko_kr";
+const envLocale = process.env.XLMCP_LANG?.toLowerCase();
+let current: LocaleData = locales[envLocale ?? ""] ?? locales[DEFAULT_LOCALE];
 
 /**
  * 로케일 변경.
