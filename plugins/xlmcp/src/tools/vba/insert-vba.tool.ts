@@ -34,7 +34,7 @@ export function register(server: McpServer) {
 
       // VBA 코드는 줄바꿈 보존 필요 → 임시 파일 경유
       const tmpPath = join(tmpdir(), `xlmcp_vba_${randomUUID()}.txt`);
-      writeFileSync(tmpPath, code, "utf-8");
+      writeFileSync(tmpPath, code.trim(), "utf-8");
       const escapedPath = tmpPath.replace(/\\/g, "\\\\");
 
       try {
@@ -42,7 +42,7 @@ export function register(server: McpServer) {
           $wb = Resolve-Workbook ${wbName}
           $comp = $wb.VBProject.VBComponents.Add(${typeMap[type]})
           $comp.Name = '${psEscape(name)}'
-          $code = [System.IO.File]::ReadAllText('${escapedPath}', [System.Text.Encoding]::UTF8)
+          $code = [System.IO.File]::ReadAllText('${escapedPath}', (New-Object System.Text.UTF8Encoding $false))
           $comp.CodeModule.InsertLines(1, $code)
           @{
             Name = $comp.Name
