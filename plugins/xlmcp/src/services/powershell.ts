@@ -60,7 +60,7 @@ class Session {
       try {
         ${script}
       } catch {
-        [Console]::Error.WriteLine(($_ | ConvertTo-Json -Compress))
+        try { [Console]::Error.WriteLine(($_ | ConvertTo-Json -Compress)) } catch { [Console]::Error.WriteLine($_.Exception.Message) }
         throw $_
       } finally {
         # COM 참조 정리 (변수가 존재하는 경우만)
