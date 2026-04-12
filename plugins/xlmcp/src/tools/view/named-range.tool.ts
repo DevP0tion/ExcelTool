@@ -26,9 +26,9 @@ export function register(server: McpServer) {
           $wb = Resolve-Workbook ${wbName}
           $names = @()
           foreach ($n in $wb.Names) {
-            $names += @{ Name = $n.Name; RefersTo = $n.RefersTo; Visible = [bool]$n.Visible } | ConvertTo-Json -Compress
+            $names += @{ Name = $n.Name; RefersTo = $n.RefersTo; Visible = [bool]$n.Visible }
           }
-          "[" + ($names -join ",") + "]"
+          ConvertTo-Json @($names) -Depth 3 -Compress
         `);
         return textContent(parseJSON(raw));
       }

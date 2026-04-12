@@ -26,12 +26,12 @@ export function register(server: McpServer) {
           $tables += @{
             Name = $t.Name
             Range = $t.Range.Address()
-            Style = $t.TableStyle.Name
+            Style = if ($t.TableStyle) { $t.TableStyle.Name } else { $null }
             Rows = $t.ListRows.Count
             Columns = $t.ListColumns.Count
-          } | ConvertTo-Json -Compress
+          }
         }
-        "[" + ($tables -join ",") + "]"
+        ConvertTo-Json @($tables) -Depth 3 -Compress
       `);
       return textContent(parseJSON(raw));
     }

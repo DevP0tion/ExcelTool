@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "xlmcp",
-      "description": "Excel 자동화 MCP 서버 (40개 도구). 세션 풀링, 가상 클립보드, 청크 병렬 쓰기. Windows 전용.",
+      "description": "Excel 자동화 MCP 서버 (41개 도구). 세션 풀링, 가상 클립보드, 청크 병렬 쓰기. Windows 전용.",
       "source": "./plugins/xlmcp",
       "version": "0.3.0",
       "category": "productivity"

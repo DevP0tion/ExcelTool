@@ -43,8 +43,9 @@ export function register(server: McpServer) {
       const typeMap: Record<string, number> = { list: 3, whole: 1, decimal: 2, textLength: 6, custom: 7 };
       const f1 = formula ? `'${psEscape(formula)}'` : "''";
       const f2 = formula2 ? `,'${psEscape(formula2)}'` : "";
-      // xlBetween=1 for range types, xlValidAlertStop=1
-      const operator = (type === "list" || type === "custom") ? "" : ", 1"; // xlBetween
+      // Validation.Add(Type, AlertStyle, Operator, Formula1, Formula2)
+      // xlBetween=1, AlertStyle는 Missing 처리
+      const operator = (type === "list" || type === "custom") ? "[Type]::Missing" : "1"; // xlBetween
       const errCmd = errorMessage
         ? `$ws.Range('${psEscape(range)}').Validation.ErrorMessage = '${psEscape(errorMessage)}'`
         : "";
@@ -54,7 +55,7 @@ export function register(server: McpServer) {
         $ws = Resolve-Sheet $wb ${shName}
         $r = $ws.Range('${psEscape(range)}')
         $r.Validation.Delete()
-        $r.Validation.Add(${typeMap[type]}${operator}, [Type]::Missing, ${f1}${f2})
+        $r.Validation.Add(${typeMap[type]}, [Type]::Missing, ${operator}, ${f1}${f2})
         ${errCmd}
       `);
       return textContent({ success: true });
