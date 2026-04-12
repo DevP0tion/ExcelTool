@@ -159,3 +159,11 @@ src/
 ```
 
 각 카테고리 폴더에 `{도구명}.tool.ts` + `index.ts`로 구성. 도구 추가 시 `.tool.ts` 파일 생성 후 해당 `index.ts`에 import 추가.
+
+## 지역화
+
+4개 언어 지원: 한국어(기본), English, 简体中文, 日本語
+
+`XLMCP_LANG` 환경변수로 설정하거나 코드에서 `setLocale()` 호출.
+
+상세 가이드: [`src/localize/LOCALIZATION.md`](src/localize/LOCALIZATION.md)
