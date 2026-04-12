@@ -8,8 +8,7 @@ import { runPS } from "../../services/powershell.js";
 import { psEscape, textContent, parseJSON } from "../../services/utils.js";
 import { workbookParam, sheetParam } from "../../schemas/common.js";
 
-const CHUNK_THRESHOLD = 500;
-const CHUNK_SIZE = 500;
+const DEFAULT_CHUNK_SIZE = 500;
 
 export function register(server: McpServer) {
   server.registerTool(
@@ -22,10 +21,12 @@ export function register(server: McpServer) {
         workbook: workbookParam,
         sheet: sheetParam,
         range: z.string().optional().describe("범위 주소 (예: A1:C10). 생략 시 UsedRange"),
+        chunkSize: z.number().int().min(100).optional().describe("청크 분할 행수. 이 값 이상이면 병렬 읽기. 기본 500"),
       },
       annotations: { readOnlyHint: true, destructiveHint: false },
     },
-    async ({ workbook, sheet, range }) => {
+    async ({ workbook, sheet, range, chunkSize: cs }) => {
+      const chunkSize = cs ?? DEFAULT_CHUNK_SIZE;
       const wbName = workbook ? `'${psEscape(workbook)}'` : '""';
       const shName = sheet ? `'${psEscape(sheet)}'` : '""';
       const rangeExpr = range
@@ -60,13 +61,13 @@ export function register(server: McpServer) {
       }
 
       // 2. 소규모: 단일 읽기 + 임시 파일 출력
-      if (rows < CHUNK_THRESHOLD) {
+      if (rows < chunkSize) {
         const data = await readSingle(wbName, shName, rangeExpr, rows, cols);
         return textContent({ Range: addr, Rows: rows, Cols: cols, Data: data });
       }
 
       // 3. 대규모: 청크 분할 병렬 읽기
-      const data = await readChunked(wbName, shName, rows, cols, startRow, startCol);
+      const data = await readChunked(wbName, shName, rows, cols, startRow, startCol, chunkSize);
       return textContent({ Range: addr, Rows: rows, Cols: cols, Data: data });
     }
   );
@@ -106,12 +107,13 @@ async function readChunked(
   rows: number,
   cols: number,
   startRow: number,
-  startCol: number
+  startCol: number,
+  chunkSize: number
 ): Promise<unknown[][]> {
   // 청크 정보 생성
   const chunks: { offset: number; chunkRows: number }[] = [];
-  for (let offset = 0; offset < rows; offset += CHUNK_SIZE) {
-    chunks.push({ offset, chunkRows: Math.min(CHUNK_SIZE, rows - offset) });
+  for (let offset = 0; offset < rows; offset += chunkSize) {
+    chunks.push({ offset, chunkRows: Math.min(chunkSize, rows - offset) });
   }
 
   // 임시 파일 경로 생성

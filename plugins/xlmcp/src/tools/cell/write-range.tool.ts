@@ -8,8 +8,7 @@ import { runPS } from "../../services/powershell.js";
 import { psEscape, textContent } from "../../services/utils.js";
 import { workbookParam, sheetParam } from "../../schemas/common.js";
 
-const CHUNK_THRESHOLD = 500; // 이 행수 이상이면 청크 분할
-const CHUNK_SIZE = 500;
+const DEFAULT_CHUNK_SIZE = 500;
 
 interface FormulaEntry {
   rowOffset: number;
@@ -31,10 +30,12 @@ export function register(server: McpServer) {
         data: z
           .array(z.array(z.string()))
           .describe("2D 배열 데이터. 각 내부 배열이 한 행"),
+        chunkSize: z.number().int().min(100).optional().describe("청크 분할 행수. 이 값 이상이면 병렬 쓰기. 기본 500"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },
-    async ({ workbook, sheet, startCell, data }) => {
+    async ({ workbook, sheet, startCell, data, chunkSize: cs }) => {
+      const chunkSize = cs ?? DEFAULT_CHUNK_SIZE;
       const rows = data.length;
       const cols = data[0]?.length ?? 0;
       if (rows === 0 || cols === 0) {
@@ -45,12 +46,12 @@ export function register(server: McpServer) {
       const shName = sheet ? `'${psEscape(sheet)}'` : '""';
 
       // 소규모: 기존 인라인 방식
-      if (rows < CHUNK_THRESHOLD) {
+      if (rows < chunkSize) {
         return writeInline(wbName, shName, startCell, data, rows, cols);
       }
 
       // 대규모: 청크 분할 + 임시 파일 + 병렬 쓰기
-      return writeChunked(wbName, shName, startCell, data, rows, cols);
+      return writeChunked(wbName, shName, startCell, data, rows, cols, chunkSize);
     }
   );
 }
@@ -120,14 +121,15 @@ async function writeChunked(
   startCell: string,
   data: string[][],
   rows: number,
-  cols: number
+  cols: number,
+  chunkSize: number
 ) {
   // 청크 분할
   const chunks: { rowOffset: number; chunkData: (string | number | null)[][] }[] = [];
   const formulas: FormulaEntry[] = [];
 
-  for (let offset = 0; offset < rows; offset += CHUNK_SIZE) {
-    const end = Math.min(offset + CHUNK_SIZE, rows);
+  for (let offset = 0; offset < rows; offset += chunkSize) {
+    const end = Math.min(offset + chunkSize, rows);
     const chunkData: (string | number | null)[][] = [];
 
     for (let ri = offset; ri < end; ri++) {
