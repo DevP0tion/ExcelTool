@@ -8,6 +8,8 @@ import { runPS } from "../../services/powershell.js";
 import { psEscape, textContent, parseJSON } from "../../services/utils.js";
 import { workbookParam, sheetParam } from "../../schemas/common.js";
 
+const DEFAULT_CHUNK_SIZE = 30;
+
 export function register(server: McpServer) {
   server.registerTool(
     "excel_copy_paste_range",
@@ -28,10 +30,12 @@ export function register(server: McpServer) {
           .enum(["values", "formulas"])
           .default("values")
           .describe("values: 계산된 값만 복사. formulas: 수식 원본 복사"),
+        chunkSize: z.number().int().optional().describe("청크 분할 행수. 기본 30"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },
-    async ({ workbook, sheet, sourceRange, destCell, destSheet, pasteType }) => {
+    async ({ workbook, sheet, sourceRange, destCell, destSheet, pasteType, chunkSize: cs }) => {
+      const chunkSize = cs ?? DEFAULT_CHUNK_SIZE;
       const wbName = workbook ? `'${psEscape(workbook)}'` : '""';
       const shName = sheet ? `'${psEscape(sheet)}'` : '""';
       const dstShName = destSheet ? `'${psEscape(destSheet)}'` : shName;
@@ -75,60 +79,125 @@ export function register(server: McpServer) {
         Data: (string | number | null)[][];
       }>(readRaw);
 
-      // 2. 대상에 쓰기
-      if (pasteType === "formulas") {
-        // 수식은 셀마다 다를 수 있으므로 배열 벌크 쓰기
-        const formulaCmds: string[] = [];
-        for (let i = 0; i < rows; i++) {
-          for (let j = 0; j < cols; j++) {
-            const v = data[i][j];
-            if (v != null && String(v).startsWith("=")) {
-              formulaCmds.push(
-                `$dstWs.Cells.Item($dst.Row + ${i}, $dst.Column + ${j}).Formula = '${psEscape(String(v))}'`
-              );
-            } else if (v != null) {
-              formulaCmds.push(
-                `$dstWs.Cells.Item($dst.Row + ${i}, $dst.Column + ${j}).Value2 = '${psEscape(String(v))}'`
-              );
-            }
-          }
-        }
-        await runPS(`
-          $wb = Resolve-Workbook ${wbName}
-          $dstWs = Resolve-Sheet $wb ${dstShName}
-          $dst = $dstWs.Range('${psEscape(destCell)}')
-          ${formulaCmds.join("\n          ")}
-        `);
-      } else {
-        // values: JSON 임시 파일 경유 벌크 쓰기
-        const tmpPath = join(tmpdir(), `xlmcp_cp_${randomUUID()}.json`);
-        writeFileSync(tmpPath, JSON.stringify(data));
-        const escapedPath = tmpPath.replace(/\\/g, "\\\\");
+      // 2. 쓰기 — values와 formulas 모두 JSON 파일 + 벌크 경로
+      const assignProp = pasteType === "formulas" ? "Formula" : "Value2";
 
-        try {
-          await runPS(`
-            $wb = Resolve-Workbook ${wbName}
-            $dstWs = Resolve-Sheet $wb ${dstShName}
-            $dst = $dstWs.Range('${psEscape(destCell)}')
-            $endCell = $dstWs.Cells.Item($dst.Row + ${rows} - 1, $dst.Column + ${cols} - 1)
-            $targetRange = $dstWs.Range($dst, $endCell)
-            $json = Get-Content '${escapedPath}' -Raw -Encoding UTF8
-            $srcData = $json | ConvertFrom-Json
-            $arr = New-Object 'object[,]' ${rows},${cols}
-            for ($i = 0; $i -lt ${rows}; $i++) {
-              for ($j = 0; $j -lt ${cols}; $j++) {
-                $v = $srcData[$i][$j]
-                if ($v -ne $null) { $arr[$i,$j] = $v }
-              }
-            }
-            $targetRange.Value2 = $arr
-          `);
-        } finally {
-          try { unlinkSync(tmpPath); } catch { /* ignore */ }
-        }
+      if (rows < chunkSize) {
+        // 소규모: 단일 벌크
+        await writeBulk(wbName, dstShName, destCell, data, rows, cols, assignProp);
+      } else {
+        // 대규모: 청크 분할 + 병렬 + Calculation 억제
+        await writeChunked(wbName, dstShName, destCell, data, rows, cols, assignProp, chunkSize);
       }
 
       return textContent({ success: true, rows, cols, pasteType });
     }
   );
+}
+
+// ── 단일 벌크 쓰기 ──
+async function writeBulk(
+  wbName: string,
+  shName: string,
+  destCell: string,
+  data: (string | number | null)[][],
+  rows: number,
+  cols: number,
+  prop: string
+): Promise<void> {
+  const tmpPath = join(tmpdir(), `xlmcp_cp_${randomUUID()}.json`);
+  writeFileSync(tmpPath, JSON.stringify(data));
+  const escapedPath = tmpPath.replace(/\\/g, "\\\\");
+
+  try {
+    await runPS(`
+      $wb = Resolve-Workbook ${wbName}
+      $dstWs = Resolve-Sheet $wb ${shName}
+      $dst = $dstWs.Range('${psEscape(destCell)}')
+      $targetRange = $dstWs.Range($dst, $dstWs.Cells.Item($dst.Row + ${rows} - 1, $dst.Column + ${cols} - 1))
+      $json = Get-Content '${escapedPath}' -Raw -Encoding UTF8
+      $srcData = $json | ConvertFrom-Json
+      $arr = New-Object 'object[,]' ${rows},${cols}
+      for ($i = 0; $i -lt ${rows}; $i++) {
+        for ($j = 0; $j -lt ${cols}; $j++) {
+          $v = $srcData[$i][$j]
+          if ($v -ne $null) { $arr[$i,$j] = $v }
+        }
+      }
+      $targetRange.${prop} = $arr
+    `);
+  } finally {
+    try { unlinkSync(tmpPath); } catch { /* ignore */ }
+  }
+}
+
+// ── 청크 분할 + 병렬 + Calculation 억제 ──
+async function writeChunked(
+  wbName: string,
+  shName: string,
+  destCell: string,
+  data: (string | number | null)[][],
+  rows: number,
+  cols: number,
+  prop: string,
+  chunkSize: number
+): Promise<void> {
+  // Calculation/ScreenUpdating 억제
+  await runPS(`
+    $wb = Resolve-Workbook ${wbName}
+    $excel.ScreenUpdating = $false
+    $excel.Calculation = -4135
+  `);
+
+  // 청크 생성 + 임시 파일
+  const chunks: { offset: number; chunkRows: number }[] = [];
+  const batchId = randomUUID();
+  const tmpFiles: string[] = [];
+
+  for (let offset = 0; offset < rows; offset += chunkSize) {
+    const chunkRows = Math.min(chunkSize, rows - offset);
+    chunks.push({ offset, chunkRows });
+    const chunkData = data.slice(offset, offset + chunkRows);
+    const filePath = join(tmpdir(), `xlmcp_cp_${batchId}_${chunks.length - 1}.json`);
+    writeFileSync(filePath, JSON.stringify(chunkData));
+    tmpFiles.push(filePath);
+  }
+
+  try {
+    // 병렬 쓰기
+    await Promise.all(
+      chunks.map((chunk, i) => {
+        const escapedPath = tmpFiles[i].replace(/\\/g, "\\\\");
+        return runPS(`
+          $wb = Resolve-Workbook ${wbName}
+          $dstWs = Resolve-Sheet $wb ${shName}
+          $dst = $dstWs.Range('${psEscape(destCell)}')
+          $chunkStart = $dstWs.Cells.Item($dst.Row + ${chunk.offset}, $dst.Column)
+          $chunkEnd = $dstWs.Cells.Item($dst.Row + ${chunk.offset} + ${chunk.chunkRows} - 1, $dst.Column + ${cols} - 1)
+          $targetRange = $dstWs.Range($chunkStart, $chunkEnd)
+          $json = Get-Content '${escapedPath}' -Raw -Encoding UTF8
+          $srcData = $json | ConvertFrom-Json
+          $arr = New-Object 'object[,]' ${chunk.chunkRows},${cols}
+          for ($i = 0; $i -lt ${chunk.chunkRows}; $i++) {
+            for ($j = 0; $j -lt ${cols}; $j++) {
+              $v = $srcData[$i][$j]
+              if ($v -ne $null) { $arr[$i,$j] = $v }
+            }
+          }
+          $targetRange.${prop} = $arr
+        `);
+      })
+    );
+  } finally {
+    // 임시 파일 정리
+    for (const f of tmpFiles) {
+      try { unlinkSync(f); } catch { /* ignore */ }
+    }
+    // Calculation/ScreenUpdating 복원
+    await runPS(`
+      $wb = Resolve-Workbook ${wbName}
+      $excel.Calculation = -4105
+      $excel.ScreenUpdating = $true
+    `).catch(() => { /* 복원 실패 무시 */ });
+  }
 }
