@@ -80,7 +80,7 @@ async function readFormulaSingle(
       $values = $r.Formula
       ${buildReadScript(rows, cols)}
       $json = ConvertTo-Json @($data) -Depth 5 -Compress
-      [System.IO.File]::WriteAllText('${escapedPath}', $json, [System.Text.Encoding]::UTF8)
+      [System.IO.File]::WriteAllText('${escapedPath}', $json, (New-Object System.Text.UTF8Encoding $false))
     `);
     return JSON.parse(readFileSync(tmpPath, "utf-8"));
   } finally {
@@ -114,7 +114,7 @@ async function readFormulaChunked(
           $values = $r.Formula
           ${buildReadScript(chunk.chunkRows, cols)}
           $json = ConvertTo-Json @($data) -Depth 5 -Compress
-          [System.IO.File]::WriteAllText('${escapedPath}', $json, [System.Text.Encoding]::UTF8)
+          [System.IO.File]::WriteAllText('${escapedPath}', $json, (New-Object System.Text.UTF8Encoding $false))
         `);
       })
     );

@@ -196,7 +196,7 @@ async function readSource(
       $values = $r.${prop}
       ${buildReadScript(rows, cols)}
       $json = ConvertTo-Json @($data) -Depth 5 -Compress
-      [System.IO.File]::WriteAllText('${escapedPath}', $json, [System.Text.Encoding]::UTF8)
+      [System.IO.File]::WriteAllText('${escapedPath}', $json, (New-Object System.Text.UTF8Encoding $false))
     `);
     return JSON.parse(readFileSync(tmpPath, "utf-8"));
   } finally {
@@ -230,7 +230,7 @@ async function readSourceChunked(
           $values = $r.${prop}
           ${buildReadScript(chunk.chunkRows, cols)}
           $json = ConvertTo-Json @($data) -Depth 5 -Compress
-          [System.IO.File]::WriteAllText('${escapedPath}', $json, [System.Text.Encoding]::UTF8)
+          [System.IO.File]::WriteAllText('${escapedPath}', $json, (New-Object System.Text.UTF8Encoding $false))
         `);
       })
     );
