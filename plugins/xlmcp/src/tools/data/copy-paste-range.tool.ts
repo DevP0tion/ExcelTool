@@ -1,5 +1,9 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { writeFileSync, unlinkSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
+import { randomUUID } from "crypto";
 import { runPS } from "../../services/powershell.js";
 import { psEscape, textContent, parseJSON } from "../../services/utils.js";
 import { workbookParam, sheetParam } from "../../schemas/common.js";
@@ -97,10 +101,7 @@ export function register(server: McpServer) {
         `);
       } else {
         // values: JSON 임시 파일 경유 벌크 쓰기
-        const { writeFileSync, unlinkSync } = await import("fs");
-        const { tmpdir } = await import("os");
-        const { join } = await import("path");
-        const tmpPath = join(tmpdir(), `xlmcp_cp_${Date.now()}.json`);
+        const tmpPath = join(tmpdir(), `xlmcp_cp_${randomUUID()}.json`);
         writeFileSync(tmpPath, JSON.stringify(data));
         const escapedPath = tmpPath.replace(/\\/g, "\\\\");
 

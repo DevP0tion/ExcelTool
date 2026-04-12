@@ -3,6 +3,7 @@ import { z } from "zod";
 import { tmpdir } from "os";
 import { writeFileSync, unlinkSync } from "fs";
 import { join } from "path";
+import { randomUUID } from "crypto";
 import { runPS } from "../../services/powershell.js";
 import { psEscape, textContent } from "../../services/utils.js";
 import { workbookParam, sheetParam } from "../../schemas/common.js";
@@ -149,10 +150,10 @@ async function writeChunked(
 
   // 임시 파일 생성
   const tmpFiles: string[] = [];
-  const timestamp = Date.now();
+  const batchId = randomUUID();
 
   for (let i = 0; i < chunks.length; i++) {
-    const filePath = join(tmpdir(), `xlmcp_chunk_${timestamp}_${i}.json`);
+    const filePath = join(tmpdir(), `xlmcp_chunk_${batchId}_${i}.json`);
     writeFileSync(filePath, JSON.stringify(chunks[i].chunkData));
     tmpFiles.push(filePath);
   }
