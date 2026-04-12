@@ -65,10 +65,13 @@ class Session {
       } finally {
         # COM 참조 정리 (변수가 존재하는 경우만)
         foreach ($__v in @('r','c','src','srcWs','dstWs','dst','dest','targetRange','start','chunkStart','chunkEnd','pos','t','pvt','pf','cache','chart','fc','first','current','n','existing')) {
-          $__obj = Get-Variable -Name $__v -ValueOnly -ErrorAction SilentlyContinue
-          if ($__obj -ne $null) {
-            try { [void][System.Runtime.InteropServices.Marshal]::ReleaseComObject($__obj) } catch {}
-          }
+          try {
+            $__obj = Get-Variable -Name $__v -ValueOnly -ErrorAction SilentlyContinue
+            if ($__obj -ne $null) {
+              [void][System.Runtime.InteropServices.Marshal]::ReleaseComObject($__obj)
+              Set-Variable -Name $__v -Value $null -ErrorAction SilentlyContinue
+            }
+          } catch {}
         }
       }
     `;
