@@ -1,0 +1,481 @@
+{
+  "common": {
+    "params": {
+      "workbook": "워크북 이름. 생략하면 현재 활성 워크북 사용",
+      "sheet": "시트 이름. 생략하면 현재 활성 시트 사용"
+    },
+    "errors": {
+      "noActiveWorkbook": "열려 있는 워크북이 없습니다.",
+      "poolDisposed": "풀 종료됨",
+      "taskCancelled": "작업 #{id} 취소됨",
+      "timeout": "타임아웃: {ms}ms 초과",
+      "jsonParseFailed": "JSON 파싱 실패: {preview}"
+    }
+  },
+  "tools": {
+    "workbook": {
+      "create": {
+        "title": "워크북 생성",
+        "description": "새 빈 워크북을 생성합니다. savePath를 지정하면 즉시 저장합니다.",
+        "params": {
+          "savePath": "저장할 절대 경로 (.xlsx). 생략 시 저장하지 않음"
+        }
+      },
+      "open": {
+        "title": "워크북 열기",
+        "description": "파일 경로로 워크북을 엽니다. 이미 열려 있으면 해당 워크북을 활성화합니다.",
+        "params": {
+          "filePath": "Excel 파일 절대 경로 (예: C:\\docs\\data.xlsx)",
+          "readOnly": "읽기 전용으로 열기"
+        }
+      },
+      "save": {
+        "title": "워크북 저장",
+        "description": "워크북을 저장합니다. savePath를 지정하면 다른 이름으로 저장합니다.",
+        "params": {
+          "savePath": "다른 이름으로 저장할 절대 경로"
+        }
+      },
+      "close": {
+        "title": "워크북 닫기",
+        "description": "워크북을 닫습니다. save 옵션으로 저장 여부를 지정합니다.",
+        "params": {
+          "save": "닫기 전 저장 여부"
+        }
+      },
+      "getActive": {
+        "title": "활성 워크북 정보",
+        "description": "현재 활성화된 워크북의 이름, 경로, 시트 수, 활성 시트 이름을 반환합니다."
+      },
+      "listOpen": {
+        "title": "열린 워크북 목록",
+        "description": "현재 Excel에 열려 있는 모든 워크북의 이름과 경로를 반환합니다."
+      }
+    },
+    "sheet": {
+      "list": {
+        "title": "시트 목록",
+        "description": "워크북의 모든 시트 이름을 반환합니다."
+      },
+      "create": {
+        "title": "시트 추가",
+        "description": "새 시트를 추가합니다.",
+        "params": {
+          "name": "새 시트 이름",
+          "after": "이 시트 뒤에 추가. 생략 시 맨 뒤"
+        }
+      },
+      "delete": {
+        "title": "시트 삭제",
+        "description": "시트를 삭제합니다.",
+        "params": {
+          "name": "삭제할 시트 이름"
+        }
+      },
+      "copy": {
+        "title": "시트 복사",
+        "description": "시트를 복사합니다. 같은 워크북 내에서 복사됩니다.",
+        "params": {
+          "source": "원본 시트 이름",
+          "newName": "복사본 시트 이름. 생략 시 자동 이름"
+        }
+      },
+      "rename": {
+        "title": "시트 이름 변경",
+        "description": "시트 이름을 변경합니다.",
+        "params": {
+          "oldName": "현재 시트 이름",
+          "newName": "새 시트 이름"
+        }
+      }
+    },
+    "cell": {
+      "readCell": {
+        "title": "셀 읽기",
+        "description": "단일 셀의 값, 수식, 표시 텍스트를 반환합니다.",
+        "params": {
+          "cell": "셀 주소 (예: A1, B3)"
+        }
+      },
+      "writeCell": {
+        "title": "셀 쓰기",
+        "description": "단일 셀에 값 또는 수식을 입력합니다. '='로 시작하면 수식으로 처리됩니다.",
+        "params": {
+          "cell": "셀 주소 (예: A1)",
+          "value": "입력할 값 또는 수식 (예: '=SUM(A1:A10)')"
+        }
+      },
+      "readRange": {
+        "title": "범위 읽기",
+        "description": "셀 범위의 값을 2D 배열로 반환합니다. 범위를 생략하면 UsedRange 전체를 읽습니다. 대용량 시 자동 청크 분할 병렬 읽기.",
+        "params": {
+          "range": "범위 주소 (예: A1:C10). 생략 시 UsedRange",
+          "chunkSize": "청크 분할 행수. 이 값 이상이면 병렬 읽기. 기본 30"
+        }
+      },
+      "writeRange": {
+        "title": "범위 쓰기",
+        "description": "시작 셀부터 2D 배열 데이터를 입력합니다. 대용량 데이터는 자동 청크 분할 + 병렬 쓰기로 가속됩니다.",
+        "params": {
+          "startCell": "시작 셀 주소 (예: A1)",
+          "data": "2D 배열 데이터. 각 내부 배열이 한 행",
+          "chunkSize": "청크 분할 행수. 이 값 이상이면 병렬 쓰기. 기본 30"
+        }
+      },
+      "readRangeFormulas": {
+        "title": "범위 수식 읽기",
+        "description": "셀 범위의 수식을 2D 배열로 반환합니다. 수식이 없는 셀은 값을 반환합니다. 대용량 시 자동 청크 분할 병렬 읽기.",
+        "params": {
+          "range": "범위 주소 (예: A1:C10). 생략 시 UsedRange",
+          "chunkSize": "청크 분할 행수. 기본 30"
+        }
+      },
+      "clearRange": {
+        "title": "범위 삭제",
+        "description": "범위의 내용, 서식 또는 전체를 삭제합니다.",
+        "params": {
+          "range": "범위 주소 (예: A1:D10)",
+          "mode": "삭제 대상: values(값만), formats(서식만), all(전체)"
+        }
+      }
+    },
+    "format": {
+      "formatRange": {
+        "title": "범위 서식",
+        "description": "범위에 서식을 적용합니다. 폰트(이름/크기/굵기/기울임/색상), 배경색, 정렬, 테두리, 표시 형식 등을 지정할 수 있습니다.",
+        "params": {
+          "range": "범위 주소 (예: A1:D10)",
+          "fontName": "폰트 이름 (예: '맑은 고딕')",
+          "fontSize": "폰트 크기",
+          "bold": "굵게",
+          "italic": "기울임",
+          "fontColor": "폰트 색상 RGB hex (예: 'FF0000')",
+          "bgColor": "배경 색상 RGB hex (예: 'FFFF00')",
+          "hAlign": "가로 정렬",
+          "vAlign": "세로 정렬",
+          "wrapText": "텍스트 줄바꿈",
+          "numberFormat": "표시 형식 (예: '#,##0', 'yyyy-mm-dd')",
+          "border": "전체 테두리 스타일 (간편 옵션)",
+          "borderEdges": "개별 테두리 제어. border와 함께 사용 시 borderEdges가 우선"
+        }
+      },
+      "setColumnWidth": {
+        "title": "열 너비 설정",
+        "description": "열 너비를 설정합니다. 'auto'로 자동 맞춤 가능.",
+        "params": {
+          "columns": "열 범위 (예: 'A:C', 'B:B')",
+          "width": "너비 값(숫자) 또는 'auto'"
+        }
+      },
+      "setRowHeight": {
+        "title": "행 높이 설정",
+        "description": "행 높이를 설정합니다. 'auto'로 자동 맞춤 가능.",
+        "params": {
+          "rows": "행 범위 (예: '1:5', '3:3')",
+          "height": "높이 값(숫자) 또는 'auto'"
+        }
+      },
+      "mergeCells": {
+        "title": "셀 병합/해제",
+        "description": "셀 범위를 병합하거나 병합을 해제합니다.",
+        "params": {
+          "range": "범위 주소 (예: A1:D1)",
+          "unmerge": "true이면 병합 해제"
+        }
+      },
+      "readCellFormat": {
+        "title": "셀 서식 읽기",
+        "description": "셀의 현재 서식 정보를 반환합니다. 폰트, 배경색, 정렬, 테두리, 병합 여부 등을 포함합니다.",
+        "params": {
+          "cell": "셀 주소 (예: A1)"
+        }
+      },
+      "writeCellFormat": {
+        "title": "셀 서식 일괄 적용",
+        "description": "read_cell_format의 출력 형식과 동일한 구조로 서식을 일괄 적용합니다. 범위에도 적용 가능합니다.",
+        "params": {
+          "range": "범위 주소 (예: A1 또는 A1:D10)",
+          "font": "폰트 설정",
+          "bgColor": "배경 색상 RGB hex",
+          "hAlign": "가로 정렬",
+          "vAlign": "세로 정렬",
+          "wrapText": "텍스트 줄바꿈",
+          "numberFormat": "표시 형식",
+          "borders": "개별 테두리 설정"
+        }
+      }
+    },
+    "data": {
+      "copyPasteRange": {
+        "title": "범위 복사/붙여넣기 (값·수식)",
+        "description": "범위의 값 또는 수식을 복사하여 대상 위치에 붙여넣습니다.\n시스템 클립보드를 사용하지 않으므로 다른 작업과 안전하게 병렬 실행됩니다.\n\n⚠️ 이 도구는 값(values)과 수식(formulas)만 복사합니다.\n서식(폰트, 색상, 테두리 등)을 복사하려면 excel_copy_paste_format을 사용하세요.",
+        "params": {
+          "sourceRange": "원본 범위 (예: A1:C10)",
+          "destCell": "붙여넣기 시작 셀 (예: E1)",
+          "destSheet": "대상 시트. 생략 시 같은 시트",
+          "pasteType": "values: 계산된 값만 복사. formulas: 수식 원본 복사",
+          "chunkSize": "청크 분할 행수. 기본 30"
+        }
+      },
+      "copyPasteFormat": {
+        "title": "범위 서식 복사/붙여넣기",
+        "description": "범위의 서식(폰트, 색상, 테두리, 표시 형식 등)을 복사하여 대상 위치에 붙여넣습니다.\n시스템 클립보드를 사용하므로 실행 중 다른 작업은 일시 차단됩니다.\n\n⚠️ 이 도구는 서식만 복사합니다.\n값이나 수식을 복사하려면 excel_copy_paste_range를 사용하세요.\n값과 서식을 모두 복사하려면 두 도구를 순차 호출하세요.",
+        "params": {
+          "sourceRange": "원본 범위 (예: A1:C10)",
+          "destCell": "붙여넣기 시작 셀 (예: E1)",
+          "destSheet": "대상 시트. 생략 시 같은 시트"
+        }
+      },
+      "findReplace": {
+        "title": "찾기/바꾸기",
+        "description": "시트 내에서 텍스트를 찾거나 바꿉니다. replace를 생략하면 찾기만 수행합니다.",
+        "params": {
+          "find": "찾을 텍스트",
+          "replace": "바꿀 텍스트. 생략 시 찾기만 수행",
+          "matchCase": "대소문자 구분",
+          "range": "검색 범위. 생략 시 전체 시트"
+        }
+      },
+      "sortRange": {
+        "title": "범위 정렬",
+        "description": "범위를 지정한 열 기준으로 정렬합니다.",
+        "params": {
+          "range": "정렬할 범위 (예: A1:D100)",
+          "sortBy": "정렬 기준 열 주소 (예: B1)",
+          "order": "정렬 순서",
+          "hasHeader": "첫 행이 헤더인지 여부"
+        }
+      },
+      "autoFilter": {
+        "title": "자동 필터",
+        "description": "범위에 자동 필터를 설정하거나 해제합니다. criteria를 지정하면 특정 열에 필터 조건을 적용합니다.",
+        "params": {
+          "range": "필터 범위 (예: A1:D100)",
+          "toggle": "true이면 필터 토글 (있으면 해제, 없으면 설정)",
+          "field": "필터 적용할 열 번호 (범위 내 1부터)",
+          "criteria": "필터 조건 (예: '>100', 'A사')"
+        }
+      },
+      "insertDeleteRowsCols": {
+        "title": "행/열 삽입·삭제",
+        "description": "행 또는 열을 삽입하거나 삭제합니다.",
+        "params": {
+          "target": "대상: row 또는 column",
+          "action": "동작: insert 또는 delete",
+          "index": "행 번호(1부터) 또는 열 번호/문자 (1 또는 'A')",
+          "count": "삽입/삭제할 개수"
+        }
+      }
+    },
+    "table": {
+      "list": {
+        "title": "표 목록",
+        "description": "시트 내 모든 표(ListObject)의 이름, 범위, 스타일, 행/열 수를 반환합니다."
+      },
+      "create": {
+        "title": "표 생성",
+        "description": "범위를 Excel 표(ListObject)로 변환합니다.",
+        "params": {
+          "range": "표로 변환할 범위 (예: A1:D10)",
+          "name": "표 이름. 생략 시 자동",
+          "hasHeader": "첫 행을 헤더로 사용",
+          "style": "표 스타일 (예: 'TableStyleMedium2')"
+        }
+      },
+      "edit": {
+        "title": "표 편집",
+        "description": "기존 표의 이름, 스타일, 크기를 변경하거나 행/열을 추가합니다.",
+        "params": {
+          "name": "표 이름",
+          "newName": "새 표 이름",
+          "style": "표 스타일 (예: 'TableStyleLight1')",
+          "resize": "새 범위로 크기 변경 (예: 'A1:E20')",
+          "addRow": "true이면 맨 아래에 행 추가",
+          "addColumn": "추가할 열 이름",
+          "showTotals": "요약 행 표시/숨기기"
+        }
+      },
+      "delete": {
+        "title": "표 삭제",
+        "description": "표(ListObject)를 삭제합니다. 데이터는 유지하고 표 서식만 제거합니다. clearData를 true로 하면 데이터도 삭제합니다.",
+        "params": {
+          "name": "삭제할 표 이름",
+          "clearData": "true이면 데이터도 함께 삭제"
+        }
+      }
+    },
+    "chart": {
+      "create": {
+        "title": "차트 생성",
+        "description": "데이터 범위로 차트를 생성합니다.",
+        "params": {
+          "dataRange": "차트 데이터 범위 (예: A1:D10)",
+          "chartType": "차트 유형",
+          "title": "차트 제목",
+          "position": "차트 위치 셀 (예: F1). 생략 시 자동"
+        }
+      }
+    },
+    "pivot": {
+      "create": {
+        "title": "피벗 테이블 생성",
+        "description": "데이터 범위로 피벗 테이블을 생성합니다.",
+        "params": {
+          "sourceRange": "데이터 소스 범위 (예: A1:D100)",
+          "destCell": "피벗 테이블 위치 (예: F1 또는 다른 시트의 Sheet2!A1)",
+          "name": "피벗 테이블 이름",
+          "rowFields": "행 필드 이름 배열",
+          "columnFields": "열 필드 이름 배열",
+          "dataFields": "데이터(값) 필드 배열",
+          "field": "필드 이름",
+          "function": "집계 함수"
+        }
+      }
+    },
+    "validation": {
+      "dataValidation": {
+        "title": "데이터 유효성 검사",
+        "description": "셀에 입력 규칙을 설정합니다. 드롭다운 목록, 숫자 범위, 텍스트 길이 등을 제한할 수 있습니다.",
+        "params": {
+          "range": "대상 범위 (예: B2:B100)",
+          "type": "유효성 유형. clear는 기존 규칙 제거",
+          "formula": "list: 쉼표 구분 값 (예: 'A,B,C') 또는 범위참조. whole/decimal: 최소값. custom: 수식",
+          "formula2": "whole/decimal/textLength: 최대값",
+          "errorMessage": "오류 메시지"
+        }
+      },
+      "conditionalFormat": {
+        "title": "조건부 서식",
+        "description": "범위에 조건부 서식 규칙을 추가합니다. clear 타입으로 기존 규칙을 제거할 수 있습니다.",
+        "params": {
+          "range": "대상 범위 (예: B2:B100)",
+          "type": "규칙 유형. clear는 기존 규칙 모두 제거",
+          "operator": "cellValue 유형의 비교 연산자",
+          "formula": "조건 값 또는 수식 (예: '100', '=TODAY()')",
+          "formula2": "between 연산자의 두 번째 값",
+          "fontColor": "조건 충족 시 폰트 색상 RGB hex",
+          "bgColor": "조건 충족 시 배경 색상 RGB hex",
+          "bold": "조건 충족 시 굵게"
+        }
+      }
+    },
+    "image": {
+      "insert": {
+        "title": "이미지 삽입",
+        "description": "이미지 파일을 시트에 삽입합니다. 이미지는 엑셀 파일 내에 임베딩되므로 원본 파일을 삭제해도 유지됩니다.",
+        "params": {
+          "filePath": "이미지 절대 경로 (PNG, JPG, BMP, GIF)",
+          "cell": "배치 기준 셀 (예: E1)",
+          "width": "너비 px. 생략 시 원본 크기",
+          "height": "높이 px. 생략 시 원본 크기",
+          "name": "Shape 이름. 생략 시 자동",
+          "keepAspect": "width 또는 height 하나만 지정 시 비율 유지"
+        }
+      },
+      "list": {
+        "title": "이미지 목록",
+        "description": "시트에 삽입된 이미지(Picture) 목록을 반환합니다."
+      },
+      "manage": {
+        "title": "이미지 관리",
+        "description": "삽입된 이미지를 삭제, 이동, 크기 변경합니다. 이미지 이름은 excel_list_images로 확인할 수 있습니다.",
+        "params": {
+          "name": "이미지(Shape) 이름",
+          "action": "동작: delete(삭제), move(이동), resize(크기 변경)",
+          "cell": "move 시 대상 셀 (예: A10)",
+          "width": "resize 시 너비 px",
+          "height": "resize 시 높이 px",
+          "keepAspect": "resize 시 width 또는 height 하나만 지정하면 비율 유지"
+        },
+        "errors": {
+          "moveCellRequired": "move 시 cell 파라미터가 필요합니다.",
+          "resizeDimensionRequired": "resize 시 width 또는 height가 필요합니다."
+        }
+      },
+      "exportRange": {
+        "title": "범위 이미지 내보내기",
+        "description": "셀 범위를 이미지 파일(PNG/JPG/BMP/GIF)로 내보냅니다.\n시스템 클립보드를 사용하므로 실행 중 다른 작업은 일시 차단됩니다.",
+        "params": {
+          "range": "캡처할 범위 (예: A1:D10)",
+          "savePath": "저장 절대 경로 (예: F:\\output\\capture.png)",
+          "format": "이미지 형식"
+        }
+      }
+    },
+    "vba": {
+      "insert": {
+        "title": "VBA 모듈 추가",
+        "description": "VBA 모듈을 추가하고 코드를 삽입합니다.\n⚠️ Excel 옵션 > 보안 센터 > 매크로 설정에서 \"프로그래밍 방식 VBA 프로젝트 액세스 신뢰\"가 켜져 있어야 합니다.\n⚠️ VBA를 저장하려면 .xlsm 형식으로 저장해야 합니다.",
+        "params": {
+          "name": "모듈 이름 (예: MyMacro)",
+          "code": "VBA 소스 코드",
+          "type": "모듈 유형. module(표준), classModule(클래스), form(폼)"
+        }
+      },
+      "list": {
+        "title": "VBA 모듈 목록",
+        "description": "VBA 모듈 목록을 반환합니다. name을 지정하면 해당 모듈의 소스 코드도 반환합니다.\n⚠️ \"프로그래밍 방식 VBA 프로젝트 액세스 신뢰\"가 켜져 있어야 합니다.",
+        "params": {
+          "name": "특정 모듈 이름. 지정 시 해당 모듈의 코드 반환"
+        }
+      },
+      "manage": {
+        "title": "VBA 모듈 관리",
+        "description": "VBA 모듈을 삭제, 코드 교체, 코드 추가합니다.\nSheet/ThisWorkbook 등 Document 모듈은 삭제 불가하며 코드만 제거됩니다.\n⚠️ \"프로그래밍 방식 VBA 프로젝트 액세스 신뢰\"가 켜져 있어야 합니다.",
+        "params": {
+          "name": "모듈 이름",
+          "action": "delete(삭제), replace(코드 전체 교체), append(코드 끝에 추가)",
+          "code": "replace/append 시 VBA 코드"
+        },
+        "messages": {
+          "codeCleared": "Document 모듈은 삭제 불가, 코드만 제거됨",
+          "codeRequired": "{action} 시 code 파라미터가 필요합니다."
+        }
+      }
+    },
+    "view": {
+      "freezePanes": {
+        "title": "틀 고정",
+        "description": "셀 위치 기준으로 틀을 고정하거나 해제합니다. cell을 지정하면 해당 셀의 위쪽 행과 왼쪽 열이 고정됩니다.",
+        "params": {
+          "cell": "고정 기준 셀 (예: B3 → 1~2행, A열 고정). 생략 시 해제"
+        }
+      },
+      "namedRange": {
+        "title": "이름 정의",
+        "description": "이름 정의(Named Range)를 조회, 생성, 삭제합니다.",
+        "params": {
+          "action": "동작: list(조회), add(생성), delete(삭제)",
+          "name": "이름 (add/delete 시 필수)",
+          "refersTo": "참조 범위 (add 시 필수, 예: '=Sheet1!$A$1:$D$10')"
+        }
+      },
+      "poolStatus": {
+        "title": "세션 풀 상태",
+        "description": "PowerShell 세션 풀의 현재 상태를 반환합니다.\n세션 수, busy/alive 상태, 작업 큐 길이, 처리 통계를 확인할 수 있습니다."
+      },
+      "cancelQueued": {
+        "title": "대기 작업 취소",
+        "description": "큐에 대기 중인 작업을 취소합니다.\ntaskId를 지정하면 해당 작업만 취소하고, 생략하면 모든 대기 작업을 취소합니다.\n이미 실행 중인 작업은 취소할 수 없습니다.\n대기 중인 작업 ID는 excel_pool_status로 확인할 수 있습니다.",
+        "params": {
+          "taskId": "취소할 작업 ID. 생략 시 전체 취소"
+        },
+        "messages": {
+          "cancelled": "작업 #{id} 취소됨",
+          "notFound": "작업 #{id}을 찾을 수 없음 (이미 실행 중이거나 완료됨)",
+          "bulkCancelled": "대기 중인 {count}개 작업 취소됨",
+          "noPending": "취소할 대기 작업 없음"
+        }
+      }
+    }
+  },
+  "ps": {
+    "errors": {
+      "imageNotFound": "이미지 파일을 찾을 수 없습니다: {path}",
+      "documentModuleDeleteNotice": "Document 모듈은 삭제 불가, 코드만 제거됨"
+    }
+  },
+  "format": {
+    "noChanges": "변경 사항 없음"
+  }
+}
