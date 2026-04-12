@@ -64,7 +64,7 @@ class Session {
         throw $_
       } finally {
         # COM 참조 정리 (변수가 존재하는 경우만)
-        foreach ($__v in @('r','c','src','srcWs','dstWs','dst','dest','targetRange','start','chunkStart','chunkEnd','pos','t','pvt','pf','cache','chart','fc','first','current','n','existing','pic','s')) {
+        foreach ($__v in @('r','c','src','srcWs','dstWs','dst','dest','targetRange','start','chunkStart','chunkEnd','pos','t','pvt','pf','cache','chart','fc','first','current','n','existing','pic','s','comp','cm')) {
           try {
             $__obj = Get-Variable -Name $__v -ValueOnly -ErrorAction SilentlyContinue
             if ($__obj -ne $null) {

@@ -15,11 +15,14 @@ export function register(server: McpServer) {
       const raw = await runPS(`
         $wb = $excel.ActiveWorkbook
         if (-not $wb) { throw "열려 있는 워크북이 없습니다." }
+        $vbaTrusted = $false
+        try { $null = $wb.VBProject.VBComponents.Count; $vbaTrusted = $true } catch {}
         @{
           Name = $wb.Name
           Path = $wb.FullName
           SheetCount = $wb.Worksheets.Count
           ActiveSheet = $wb.ActiveSheet.Name
+          VbaAccessTrusted = $vbaTrusted
         } | ConvertTo-Json -Compress
       `);
       return textContent(parseJSON(raw));

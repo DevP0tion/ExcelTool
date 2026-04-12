@@ -47,7 +47,7 @@ Excel을 직접 제어하는 MCP 서버.
 }
 ```
 
-## 도구 (44개)
+## 도구 (47개)
 
 ### Workbook (6)
 
@@ -138,6 +138,14 @@ Excel을 직접 제어하는 MCP 서버.
 | `excel_insert_image` | 이미지 파일을 시트에 임베딩 삽입 (PNG, JPG, BMP, GIF). 위치·크기·비율 유지 지정 |
 | `excel_list_images` | 시트에 삽입된 이미지(Picture) 목록 조회 (이름, 크기, 위치) |
 | `excel_manage_image` | 이미지 삭제, 이동(셀 지정), 크기 변경 |
+
+### VBA (3)
+
+| 도구 | 설명 |
+|---|---|
+| `excel_insert_vba` | VBA 모듈 추가 + 코드 삽입 (module, classModule, form) |
+| `excel_list_vba` | VBA 모듈 목록 조회. name 지정 시 소스 코드 반환 |
+| `excel_manage_vba` | VBA 모듈 삭제/코드 교체/코드 추가. Document 모듈은 코드만 제거 |
 
 ### View (4)
 

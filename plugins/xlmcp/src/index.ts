@@ -13,6 +13,7 @@ import { registerPivotTools } from "./tools/pivot/index.js";
 import { registerValidationTools } from "./tools/validation/index.js";
 import { registerViewTools } from "./tools/view/index.js";
 import { registerImageTools } from "./tools/image/index.js";
+import { registerVbaTools } from "./tools/vba/index.js";
 
 const server = new McpServer({
   name: "xlmcp",
@@ -31,6 +32,7 @@ registerPivotTools(server);
 registerValidationTools(server);
 registerViewTools(server);
 registerImageTools(server);
+registerVbaTools(server);
 
 // stdio transport
 const transport = new StdioServerTransport();
