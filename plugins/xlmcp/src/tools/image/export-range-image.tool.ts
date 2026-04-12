@@ -31,18 +31,23 @@ export function register(server: McpServer) {
         $wb = Resolve-Workbook ${wbName}
         $ws = Resolve-Sheet $wb ${shName}
         $r = $ws.Range('${psEscape(range)}')
+        $w = $r.Width + 1
+        $h = $r.Height + 1
 
-        # 범위를 클립보드에 복사 (xlScreen=1, xlPicture=2 → EMF, xlBitmap=2)
-        $r.CopyPicture(1, 2)
+        # 범위를 클립보드에 복사 (xlScreen=1, xlBitmap=2)
+        $r.CopyPicture([int]1, [int]2)
 
-        # 임시 ChartObject 생성 (범위 크기에 맞춤)
-        $chartObj = $ws.ChartObjects.Add($r.Left, $r.Top, $r.Width, $r.Height)
-        $chartObj.Chart.Paste()
+        # 임시 ChartObject 생성 + Activate
+        $chartObj = $ws.ChartObjects.Add(0, 0, $w, $h)
+        $chartObj.Activate()
+
+        # ActiveChart 경유 Paste (COM 안정성)
+        $excel.ActiveChart.Paste()
 
         # 이미지 내보내기
         $chartObj.Chart.Export('${psEscape(savePath)}', '${format.toUpperCase()}')
 
-        # 임시 ChartObject 삭제
+        # 정리
         $chartObj.Delete()
         $excel.CutCopyMode = $false
 
