@@ -1,0 +1,481 @@
+{
+  "common": {
+    "params": {
+      "workbook": "ブック名。省略するとアクティブブックを使用",
+      "sheet": "シート名。省略するとアクティブシートを使用"
+    },
+    "errors": {
+      "noActiveWorkbook": "開いているブックがありません。",
+      "poolDisposed": "プールが破棄されました",
+      "taskCancelled": "タスク #{id} がキャンセルされました",
+      "timeout": "タイムアウト：{ms}ms 超過",
+      "jsonParseFailed": "JSON パース失敗：{preview}"
+    }
+  },
+  "tools": {
+    "workbook": {
+      "create": {
+        "title": "新規ブック作成",
+        "description": "新しい空のブックを作成します。savePath を指定すると即座に保存します。",
+        "params": {
+          "savePath": "保存先の絶対パス（.xlsx）。省略時は保存しない"
+        }
+      },
+      "open": {
+        "title": "ブックを開く",
+        "description": "ファイルパスでブックを開きます。既に開いている場合はそのブックをアクティブにします。",
+        "params": {
+          "filePath": "Excel ファイルの絶対パス（例：C:\\docs\\data.xlsx）",
+          "readOnly": "読み取り専用で開く"
+        }
+      },
+      "save": {
+        "title": "ブックを保存",
+        "description": "ブックを保存します。savePath を指定すると名前を付けて保存します。",
+        "params": {
+          "savePath": "名前を付けて保存する絶対パス"
+        }
+      },
+      "close": {
+        "title": "ブックを閉じる",
+        "description": "ブックを閉じます。save オプションで保存するかどうかを指定します。",
+        "params": {
+          "save": "閉じる前に保存するかどうか"
+        }
+      },
+      "getActive": {
+        "title": "アクティブブック情報",
+        "description": "現在アクティブなブックの名前、パス、シート数、アクティブシート名を返します。"
+      },
+      "listOpen": {
+        "title": "開いているブック一覧",
+        "description": "Excel で現在開いているすべてのブックの名前とパスを返します。"
+      }
+    },
+    "sheet": {
+      "list": {
+        "title": "シート一覧",
+        "description": "ブック内のすべてのシート名を返します。"
+      },
+      "create": {
+        "title": "シート追加",
+        "description": "新しいシートを追加します。",
+        "params": {
+          "name": "新しいシート名",
+          "after": "このシートの後に追加。省略時は末尾"
+        }
+      },
+      "delete": {
+        "title": "シート削除",
+        "description": "シートを削除します。",
+        "params": {
+          "name": "削除するシート名"
+        }
+      },
+      "copy": {
+        "title": "シートコピー",
+        "description": "同じブック内でシートをコピーします。",
+        "params": {
+          "source": "コピー元シート名",
+          "newName": "コピー先シート名。省略時は自動命名"
+        }
+      },
+      "rename": {
+        "title": "シート名変更",
+        "description": "シート名を変更します。",
+        "params": {
+          "oldName": "現在のシート名",
+          "newName": "新しいシート名"
+        }
+      }
+    },
+    "cell": {
+      "readCell": {
+        "title": "セル読み取り",
+        "description": "単一セルの値、数式、表示テキストを返します。",
+        "params": {
+          "cell": "セルアドレス（例：A1、B3）"
+        }
+      },
+      "writeCell": {
+        "title": "セル書き込み",
+        "description": "単一セルに値または数式を入力します。'=' で始まると数式として処理されます。",
+        "params": {
+          "cell": "セルアドレス（例：A1）",
+          "value": "入力する値または数式（例：'=SUM(A1:A10)'）"
+        }
+      },
+      "readRange": {
+        "title": "範囲読み取り",
+        "description": "セル範囲の値を 2D 配列で返します。範囲を省略すると UsedRange 全体を読み取ります。大量データは自動チャンク分割並列読み取り。",
+        "params": {
+          "range": "範囲アドレス（例：A1:C10）。省略時は UsedRange",
+          "chunkSize": "チャンク分割行数。この値以上で並列読み取り。デフォルト 30"
+        }
+      },
+      "writeRange": {
+        "title": "範囲書き込み",
+        "description": "開始セルから 2D 配列データを入力します。大量データは自動チャンク分割＋並列書き込みで高速化されます。",
+        "params": {
+          "startCell": "開始セルアドレス（例：A1）",
+          "data": "2D 配列データ。各内部配列が 1 行",
+          "chunkSize": "チャンク分割行数。この値以上で並列書き込み。デフォルト 30"
+        }
+      },
+      "readRangeFormulas": {
+        "title": "範囲数式読み取り",
+        "description": "セル範囲の数式を 2D 配列で返します。数式のないセルは値を返します。大量データは自動チャンク分割並列読み取り。",
+        "params": {
+          "range": "範囲アドレス（例：A1:C10）。省略時は UsedRange",
+          "chunkSize": "チャンク分割行数。デフォルト 30"
+        }
+      },
+      "clearRange": {
+        "title": "範囲クリア",
+        "description": "範囲の内容、書式、またはすべてをクリアします。",
+        "params": {
+          "range": "範囲アドレス（例：A1:D10）",
+          "mode": "クリア対象：values（値のみ）、formats（書式のみ）、all（すべて）"
+        }
+      }
+    },
+    "format": {
+      "formatRange": {
+        "title": "範囲書式設定",
+        "description": "範囲に書式を適用します。フォント（名前/サイズ/太字/斜体/色）、背景色、配置、罫線、表示形式などを指定できます。",
+        "params": {
+          "range": "範囲アドレス（例：A1:D10）",
+          "fontName": "フォント名（例：'游ゴシック'）",
+          "fontSize": "フォントサイズ",
+          "bold": "太字",
+          "italic": "斜体",
+          "fontColor": "フォント色 RGB hex（例：'FF0000'）",
+          "bgColor": "背景色 RGB hex（例：'FFFF00'）",
+          "hAlign": "水平配置",
+          "vAlign": "垂直配置",
+          "wrapText": "折り返して全体を表示",
+          "numberFormat": "表示形式（例：'#,##0'、'yyyy-mm-dd'）",
+          "border": "全罫線スタイル（簡易オプション）",
+          "borderEdges": "個別罫線制御。border と併用時は borderEdges が優先"
+        }
+      },
+      "setColumnWidth": {
+        "title": "列幅設定",
+        "description": "列幅を設定します。'auto' で自動調整可能。",
+        "params": {
+          "columns": "列範囲（例：'A:C'、'B:B'）",
+          "width": "幅の値（数値）または 'auto'"
+        }
+      },
+      "setRowHeight": {
+        "title": "行の高さ設定",
+        "description": "行の高さを設定します。'auto' で自動調整可能。",
+        "params": {
+          "rows": "行範囲（例：'1:5'、'3:3'）",
+          "height": "高さの値（数値）または 'auto'"
+        }
+      },
+      "mergeCells": {
+        "title": "セル結合/解除",
+        "description": "セル範囲を結合または結合解除します。",
+        "params": {
+          "range": "範囲アドレス（例：A1:D1）",
+          "unmerge": "true で結合解除"
+        }
+      },
+      "readCellFormat": {
+        "title": "セル書式読み取り",
+        "description": "セルの現在の書式情報を返します。フォント、背景色、配置、罫線、結合状態などを含みます。",
+        "params": {
+          "cell": "セルアドレス（例：A1）"
+        }
+      },
+      "writeCellFormat": {
+        "title": "セル書式一括適用",
+        "description": "read_cell_format の出力形式と同じ構造で書式を一括適用します。範囲にも適用可能です。",
+        "params": {
+          "range": "範囲アドレス（例：A1 または A1:D10）",
+          "font": "フォント設定",
+          "bgColor": "背景色 RGB hex",
+          "hAlign": "水平配置",
+          "vAlign": "垂直配置",
+          "wrapText": "折り返して全体を表示",
+          "numberFormat": "表示形式",
+          "borders": "個別罫線設定"
+        }
+      }
+    },
+    "data": {
+      "copyPasteRange": {
+        "title": "範囲コピー/貼り付け（値・数式）",
+        "description": "値または数式をコピーして貼り付け先に貼り付けます。\nシステムクリップボードを使用しないため、他の操作と安全に並列実行できます。\n\n⚠️ このツールは値（values）と数式（formulas）のみコピーします。\n書式をコピーするには excel_copy_paste_format を使用してください。",
+        "params": {
+          "sourceRange": "コピー元範囲（例：A1:C10）",
+          "destCell": "貼り付け開始セル（例：E1）",
+          "destSheet": "貼り付け先シート。省略時は同じシート",
+          "pasteType": "values：計算値のみ。formulas：元の数式",
+          "chunkSize": "チャンク分割行数。デフォルト 30"
+        }
+      },
+      "copyPasteFormat": {
+        "title": "範囲書式コピー/貼り付け",
+        "description": "書式（フォント、色、罫線、表示形式など）をコピーして貼り付け先に貼り付けます。\nシステムクリップボードを使用するため、実行中は他の操作が一時ブロックされます。\n\n⚠️ このツールは書式のみコピーします。\n値や数式をコピーするには excel_copy_paste_range を使用してください。\n両方コピーするには 2 つのツールを順次呼び出してください。",
+        "params": {
+          "sourceRange": "コピー元範囲（例：A1:C10）",
+          "destCell": "貼り付け開始セル（例：E1）",
+          "destSheet": "貼り付け先シート。省略時は同じシート"
+        }
+      },
+      "findReplace": {
+        "title": "検索/置換",
+        "description": "シート内のテキストを検索または置換します。replace を省略すると検索のみ実行します。",
+        "params": {
+          "find": "検索テキスト",
+          "replace": "置換テキスト。省略時は検索のみ",
+          "matchCase": "大文字小文字を区別",
+          "range": "検索範囲。省略時はシート全体"
+        }
+      },
+      "sortRange": {
+        "title": "範囲の並べ替え",
+        "description": "指定した列を基準に範囲を並べ替えます。",
+        "params": {
+          "range": "並べ替え範囲（例：A1:D100）",
+          "sortBy": "並べ替え基準列アドレス（例：B1）",
+          "order": "並べ替え順序",
+          "hasHeader": "先頭行がヘッダーかどうか"
+        }
+      },
+      "autoFilter": {
+        "title": "オートフィルター",
+        "description": "範囲にオートフィルターを設定または解除します。criteria を指定すると特定列にフィルター条件を適用します。",
+        "params": {
+          "range": "フィルター範囲（例：A1:D100）",
+          "toggle": "フィルター切替（あれば解除、なければ設定）",
+          "field": "フィルター適用列番号（範囲内で 1 から）",
+          "criteria": "フィルター条件（例：'>100'、'A社'）"
+        }
+      },
+      "insertDeleteRowsCols": {
+        "title": "行/列の挿入・削除",
+        "description": "行または列を挿入または削除します。",
+        "params": {
+          "target": "対象：row または column",
+          "action": "操作：insert または delete",
+          "index": "行番号（1から）または列番号/文字（1 または 'A'）",
+          "count": "挿入/削除する数"
+        }
+      }
+    },
+    "table": {
+      "list": {
+        "title": "テーブル一覧",
+        "description": "シート内のすべてのテーブル（ListObject）の名前、範囲、スタイル、行/列数を返します。"
+      },
+      "create": {
+        "title": "テーブル作成",
+        "description": "範囲を Excel テーブル（ListObject）に変換します。",
+        "params": {
+          "range": "テーブルに変換する範囲（例：A1:D10）",
+          "name": "テーブル名。省略時は自動命名",
+          "hasHeader": "先頭行をヘッダーとして使用",
+          "style": "テーブルスタイル（例：'TableStyleMedium2'）"
+        }
+      },
+      "edit": {
+        "title": "テーブル編集",
+        "description": "テーブルの名前、スタイル、サイズを変更、または行/列を追加します。",
+        "params": {
+          "name": "テーブル名",
+          "newName": "新しいテーブル名",
+          "style": "テーブルスタイル（例：'TableStyleLight1'）",
+          "resize": "新しい範囲にサイズ変更（例：'A1:E20'）",
+          "addRow": "末尾に行を追加",
+          "addColumn": "追加する列名",
+          "showTotals": "集計行の表示/非表示"
+        }
+      },
+      "delete": {
+        "title": "テーブル削除",
+        "description": "テーブル（ListObject）を削除します。データは保持し書式のみ解除します。clearData を true にするとデータも削除します。",
+        "params": {
+          "name": "削除するテーブル名",
+          "clearData": "データも一緒に削除"
+        }
+      }
+    },
+    "chart": {
+      "create": {
+        "title": "グラフ作成",
+        "description": "データ範囲からグラフを作成します。",
+        "params": {
+          "dataRange": "グラフデータ範囲（例：A1:D10）",
+          "chartType": "グラフの種類",
+          "title": "グラフタイトル",
+          "position": "グラフ位置セル（例：F1）。省略時は自動"
+        }
+      }
+    },
+    "pivot": {
+      "create": {
+        "title": "ピボットテーブル作成",
+        "description": "データ範囲からピボットテーブルを作成します。",
+        "params": {
+          "sourceRange": "データソース範囲（例：A1:D100）",
+          "destCell": "ピボットテーブルの位置（例：F1 または Sheet2!A1）",
+          "name": "ピボットテーブル名",
+          "rowFields": "行フィールド名の配列",
+          "columnFields": "列フィールド名の配列",
+          "dataFields": "データ（値）フィールドの配列",
+          "field": "フィールド名",
+          "function": "集計関数"
+        }
+      }
+    },
+    "validation": {
+      "dataValidation": {
+        "title": "データの入力規則",
+        "description": "セルに入力規則を設定します。ドロップダウンリスト、数値範囲、テキスト長などを制限できます。",
+        "params": {
+          "range": "対象範囲（例：B2:B100）",
+          "type": "入力規則の種類。'clear' で既存ルールを削除",
+          "formula": "list：カンマ区切り値（例：'A,B,C'）または範囲参照。whole/decimal：最小値。custom：数式",
+          "formula2": "whole/decimal/textLength：最大値",
+          "errorMessage": "エラーメッセージ"
+        }
+      },
+      "conditionalFormat": {
+        "title": "条件付き書式",
+        "description": "範囲に条件付き書式ルールを追加します。'clear' タイプで既存ルールを削除できます。",
+        "params": {
+          "range": "対象範囲（例：B2:B100）",
+          "type": "ルールの種類。'clear' ですべてのルールを削除",
+          "operator": "cellValue タイプの比較演算子",
+          "formula": "条件値または数式（例：'100'、'=TODAY()'）",
+          "formula2": "'between' 演算子の 2 つ目の値",
+          "fontColor": "条件一致時のフォント色 RGB hex",
+          "bgColor": "条件一致時の背景色 RGB hex",
+          "bold": "条件一致時に太字"
+        }
+      }
+    },
+    "image": {
+      "insert": {
+        "title": "画像挿入",
+        "description": "画像ファイルをシートに挿入します。画像は Excel ファイル内に埋め込まれるため、元ファイルを削除しても保持されます。",
+        "params": {
+          "filePath": "画像の絶対パス（PNG、JPG、BMP、GIF）",
+          "cell": "配置基準セル（例：E1）",
+          "width": "幅 px。省略時は元のサイズ",
+          "height": "高さ px。省略時は元のサイズ",
+          "name": "Shape 名。省略時は自動",
+          "keepAspect": "width または height の一方のみ指定時にアスペクト比を維持"
+        }
+      },
+      "list": {
+        "title": "画像一覧",
+        "description": "シートに挿入されている画像（Picture）の一覧を返します。"
+      },
+      "manage": {
+        "title": "画像管理",
+        "description": "挿入された画像を削除、移動、サイズ変更します。画像名は excel_list_images で確認できます。",
+        "params": {
+          "name": "画像（Shape）名",
+          "action": "操作：delete（削除）、move（移動）、resize（サイズ変更）",
+          "cell": "move 時の移動先セル（例：A10）",
+          "width": "resize 時の幅 px",
+          "height": "resize 時の高さ px",
+          "keepAspect": "resize 時に width または height の一方のみ指定でアスペクト比維持"
+        },
+        "errors": {
+          "moveCellRequired": "move には cell パラメータが必要です。",
+          "resizeDimensionRequired": "resize には width または height が必要です。"
+        }
+      },
+      "exportRange": {
+        "title": "範囲を画像にエクスポート",
+        "description": "セル範囲を画像ファイル（PNG/JPG/BMP/GIF）にエクスポートします。\nシステムクリップボードを使用するため、実行中は他の操作が一時ブロックされます。",
+        "params": {
+          "range": "キャプチャする範囲（例：A1:D10）",
+          "savePath": "保存先絶対パス（例：F:\\output\\capture.png）",
+          "format": "画像形式"
+        }
+      }
+    },
+    "vba": {
+      "insert": {
+        "title": "VBA モジュール追加",
+        "description": "VBA モジュールを追加してコードを挿入します。\n⚠️ Excel オプション > セキュリティセンター > マクロの設定で「VBA プロジェクト オブジェクト モデルへのアクセスを信頼する」を有効にする必要があります。\n⚠️ VBA を保存するには .xlsm 形式で保存してください。",
+        "params": {
+          "name": "モジュール名（例：MyMacro）",
+          "code": "VBA ソースコード",
+          "type": "モジュールの種類：module（標準）、classModule（クラス）、form（フォーム）"
+        }
+      },
+      "list": {
+        "title": "VBA モジュール一覧",
+        "description": "VBA モジュールの一覧を返します。name を指定するとソースコードも返します。\n⚠️「VBA プロジェクト オブジェクト モデルへのアクセスを信頼する」を有効にする必要があります。",
+        "params": {
+          "name": "特定のモジュール名。指定時はコードを返却"
+        }
+      },
+      "manage": {
+        "title": "VBA モジュール管理",
+        "description": "VBA モジュールの削除、コード置換、コード追加を行います。\nSheet/ThisWorkbook 等の Document モジュールは削除できず、コードのみクリアされます。\n⚠️「VBA プロジェクト オブジェクト モデルへのアクセスを信頼する」を有効にする必要があります。",
+        "params": {
+          "name": "モジュール名",
+          "action": "delete（削除）、replace（コード全置換）、append（末尾に追加）",
+          "code": "replace/append 時の VBA コード"
+        },
+        "messages": {
+          "codeCleared": "Document モジュールは削除できません。コードのみクリアされました",
+          "codeRequired": "{action} には code パラメータが必要です。"
+        }
+      }
+    },
+    "view": {
+      "freezePanes": {
+        "title": "ウィンドウ枠の固定",
+        "description": "セル位置を基準にウィンドウ枠を固定または解除します。cell を指定すると、そのセルの上の行と左の列が固定されます。",
+        "params": {
+          "cell": "固定基準セル（例：B3 → 1～2行、A列を固定）。省略で解除"
+        }
+      },
+      "namedRange": {
+        "title": "名前の管理",
+        "description": "名前の定義（Named Range）を一覧表示、作成、削除します。",
+        "params": {
+          "action": "操作：list（一覧）、add（作成）、delete（削除）",
+          "name": "名前（add/delete 時は必須）",
+          "refersTo": "参照範囲（add 時は必須、例：'=Sheet1!$A$1:$D$10'）"
+        }
+      },
+      "poolStatus": {
+        "title": "セッションプール状態",
+        "description": "PowerShell セッションプールの現在の状態を返します。\nセッション数、busy/alive 状態、キュー長、処理統計を確認できます。"
+      },
+      "cancelQueued": {
+        "title": "キュータスクのキャンセル",
+        "description": "キューで待機中のタスクをキャンセルします。\ntaskId を指定すると該当タスクのみ、省略するとすべてキャンセルします。\n実行中のタスクはキャンセルできません。\n待機中のタスク ID は excel_pool_status で確認できます。",
+        "params": {
+          "taskId": "キャンセルするタスク ID。省略時はすべてキャンセル"
+        },
+        "messages": {
+          "cancelled": "タスク #{id} がキャンセルされました",
+          "notFound": "タスク #{id} が見つかりません（実行中または完了済み）",
+          "bulkCancelled": "待機中の {count} 件のタスクをキャンセルしました",
+          "noPending": "キャンセルする待機タスクはありません"
+        }
+      }
+    }
+  },
+  "ps": {
+    "errors": {
+      "imageNotFound": "画像ファイルが見つかりません：{path}",
+      "documentModuleDeleteNotice": "Document モジュールは削除できません。コードのみクリアされました"
+    }
+  },
+  "format": {
+    "noChanges": "変更なし"
+  }
+}
