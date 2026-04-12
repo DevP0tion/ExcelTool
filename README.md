@@ -36,13 +36,15 @@ Excel을 직접 제어하는 MCP 서버.
 | 변수 | 기본값 | 설명 |
 |---|---|---|
 | `XLMCP_POOL_SIZE` | `4` | PowerShell 세션 풀 크기 (General Pool). 최소 1 |
+| `XLMCP_LANG` | `ko_kr` | UI 언어. `ko_kr`, `en_us`, `zh_cn`, `ja_jp` |
 
 ```json
 "excel": {
   "command": "bunx",
   "args": ["xlmcp@latest"],
   "env": {
-    "XLMCP_POOL_SIZE": "2"
+    "XLMCP_POOL_SIZE": "2",
+    "XLMCP_LANG": "ko_kr"
   }
 }
 ```

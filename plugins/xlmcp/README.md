@@ -13,8 +13,15 @@ Excel을 직접 제어하는 MCP 서버.
 - **Session Pool**: PowerShell 프로세스 4개 (General) + 1개 (Exclusive). 라운드 로빈 배분.
 - **Exclusive Queue**: 클립보드·Selection·구조 변경 도구는 직렬 실행. 실행 중 General Pool 일시 차단.
 - **HealthMonitor**: 10초 heartbeat, 사망 감지 시 자동 재생성, 호출당 30초 타임아웃.
-- **대용량 쓰기**: 500행 이상 시 자동 청크 분할 + JSON 임시 파일 + 병렬 쓰기.
+- **대용량 쓰기**: 30행 이상 시 자동 청크 분할 + JSON 임시 파일 + 병렬 쓰기.
 - **가상 클립보드**: 값/수식 복사 시 시스템 클립보드 미사용. 서식 복사만 시스템 클립보드 사용.
+
+## 환경 변수
+
+| 변수 | 기본값 | 설명 |
+|---|---|---|
+| `XLMCP_POOL_SIZE` | `4` | PowerShell 세션 풀 크기 (General Pool). 최소 1 |
+| `XLMCP_LANG` | `ko_kr` | UI 언어. `ko_kr`, `en_us`, `zh_cn`, `ja_jp` |
 
 ## 도구 (48개)
 
