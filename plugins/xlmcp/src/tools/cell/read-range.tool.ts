@@ -157,21 +157,15 @@ async function readChunked(
   }
 }
 
-// ── PS 읽기 스크립트 생성 (1행/1열/다행 분기) ──
+// ── PS 읽기 스크립트 생성 (배열 Rank 방어) ──
 function buildReadScript(rows: number, cols: number): string {
   return `
       $data = @()
-      if (${rows} -eq 1 -and ${cols} -eq 1) {
-        $v = $values
-        $data = ,@(,$(if ($v -ne $null) { $v } else { $null }))
-      } elseif (${rows} -eq 1) {
-        $row = @()
-        for ($j = 1; $j -le ${cols}; $j++) {
-          $v = $values[1,$j]
-          $row += $(if ($v -ne $null) { $v } else { $null })
-        }
-        $data = ,@($row)
-      } else {
+      if ($values -isnot [System.Array]) {
+        # 스칼라 (1행 1열)
+        $data = ,@(,$(if ($values -ne $null) { $values } else { $null }))
+      } elseif ($values.Rank -eq 2) {
+        # 2D 배열 (정상 경로)
         for ($i = 1; $i -le ${rows}; $i++) {
           $row = @()
           for ($j = 1; $j -le ${cols}; $j++) {
@@ -179,6 +173,18 @@ function buildReadScript(rows: number, cols: number): string {
             $row += $(if ($v -ne $null) { $v } else { $null })
           }
           $data += ,@($row)
+        }
+      } else {
+        # 1D 배열 (1행 또는 1열이 언래핑된 경우)
+        $row = @()
+        for ($k = 0; $k -lt $values.Length; $k++) {
+          $v = $values[$k]
+          $row += $(if ($v -ne $null) { $v } else { $null })
+        }
+        if (${rows} -eq 1) {
+          $data = ,@($row)
+        } else {
+          foreach ($v in $row) { $data += ,@(,$v) }
         }
       }`;
 }

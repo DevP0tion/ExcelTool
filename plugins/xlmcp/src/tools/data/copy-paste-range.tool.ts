@@ -50,17 +50,9 @@ export function register(server: McpServer) {
         $cols = $r.Columns.Count
         $val = $r.${prop}
         $data = @()
-        if ($rows -eq 1 -and $cols -eq 1) {
-          $v = $val
-          $data = ,@(,$(if ($v -ne $null) { $v } else { $null }))
-        } elseif ($rows -eq 1) {
-          $row = @()
-          for ($j = 1; $j -le $cols; $j++) {
-            $v = $val[1,$j]
-            $row += $(if ($v -ne $null) { $v } else { $null })
-          }
-          $data = ,@($row)
-        } else {
+        if ($val -isnot [System.Array]) {
+          $data = ,@(,$(if ($val -ne $null) { $val } else { $null }))
+        } elseif ($val.Rank -eq 2) {
           for ($i = 1; $i -le $rows; $i++) {
             $row = @()
             for ($j = 1; $j -le $cols; $j++) {
@@ -68,6 +60,17 @@ export function register(server: McpServer) {
               $row += $(if ($v -ne $null) { $v } else { $null })
             }
             $data += ,@($row)
+          }
+        } else {
+          $row = @()
+          for ($k = 0; $k -lt $val.Length; $k++) {
+            $v = $val[$k]
+            $row += $(if ($v -ne $null) { $v } else { $null })
+          }
+          if ($rows -eq 1) {
+            $data = ,@($row)
+          } else {
+            foreach ($v in $row) { $data += ,@(,$v) }
           }
         }
         @{ Rows = $rows; Cols = $cols; Data = $data } | ConvertTo-Json -Depth 10 -Compress
