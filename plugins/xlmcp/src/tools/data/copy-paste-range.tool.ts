@@ -1,6 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { writeFileSync, unlinkSync } from "fs";
+import { writeFileSync, readFileSync, unlinkSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { randomUUID } from "crypto";
@@ -42,45 +42,21 @@ export function register(server: McpServer) {
 
       // 1. 소스 읽기
       const prop = pasteType === "formulas" ? "Formula" : "Value2";
-      const readRaw = await runPS(`
+
+      // 1. 메타 조회
+      const metaRaw = await runPS(`
         $wb = Resolve-Workbook ${wbName}
         $ws = Resolve-Sheet $wb ${shName}
         $r = $ws.Range('${psEscape(sourceRange)}')
-        $rows = $r.Rows.Count
-        $cols = $r.Columns.Count
-        $val = $r.${prop}
-        $data = @()
-        if ($val -isnot [System.Array]) {
-          $data = ,@(,$(if ($val -ne $null) { $val } else { $null }))
-        } elseif ($val.Rank -eq 2) {
-          for ($i = 1; $i -le $rows; $i++) {
-            $row = @()
-            for ($j = 1; $j -le $cols; $j++) {
-              $v = $val[$i,$j]
-              $row += $(if ($v -ne $null) { $v } else { $null })
-            }
-            $data += ,@($row)
-          }
-        } else {
-          $row = @()
-          for ($k = 0; $k -lt $val.Length; $k++) {
-            $v = $val[$k]
-            $row += $(if ($v -ne $null) { $v } else { $null })
-          }
-          if ($rows -eq 1) {
-            $data = ,@($row)
-          } else {
-            foreach ($v in $row) { $data += ,@(,$v) }
-          }
-        }
-        @{ Rows = $rows; Cols = $cols; Data = $data } | ConvertTo-Json -Depth 10 -Compress
+        @{ Rows = $r.Rows.Count; Cols = $r.Columns.Count; StartRow = $r.Row; StartCol = $r.Column } | ConvertTo-Json -Compress
       `);
+      const meta = parseJSON<{ Rows: number; Cols: number; StartRow: number; StartCol: number }>(metaRaw);
+      const { Rows: rows, Cols: cols, StartRow: startRow, StartCol: startCol } = meta;
 
-      const { Rows: rows, Cols: cols, Data: data } = parseJSON<{
-        Rows: number;
-        Cols: number;
-        Data: (string | number | null)[][];
-      }>(readRaw);
+      // 2. 소스 읽기 (임시 파일 + 청크 분할)
+      const data = rows < chunkSize
+        ? await readSource(wbName, shName, `$ws.Range('${psEscape(sourceRange)}')`, rows, cols, prop)
+        : await readSourceChunked(wbName, shName, rows, cols, startRow, startCol, prop, chunkSize);
 
       // 2. 쓰기 — values와 formulas 모두 JSON 파일 + 벌크 경로
       const assignProp = pasteType === "formulas" ? "Formula" : "Value2";
@@ -203,4 +179,98 @@ async function writeChunked(
       $excel.ScreenUpdating = $true
     `).catch(() => { /* 복원 실패 무시 */ });
   }
+}
+
+// ── 소스 읽기: 단일 + 임시 파일 ──
+async function readSource(
+  wbName: string, shName: string, rangeExpr: string,
+  rows: number, cols: number, prop: string
+): Promise<(string | number | null)[][]> {
+  const tmpPath = join(tmpdir(), `xlmcp_cpr_${randomUUID()}.json`);
+  const escapedPath = tmpPath.replace(/\\/g, "\\\\");
+  try {
+    await runPS(`
+      $wb = Resolve-Workbook ${wbName}
+      $ws = Resolve-Sheet $wb ${shName}
+      $r = ${rangeExpr}
+      $values = $r.${prop}
+      ${buildReadScript(rows, cols)}
+      $json = ConvertTo-Json @($data) -Depth 5 -Compress
+      [System.IO.File]::WriteAllText('${escapedPath}', $json, [System.Text.Encoding]::UTF8)
+    `);
+    return JSON.parse(readFileSync(tmpPath, "utf-8"));
+  } finally {
+    try { unlinkSync(tmpPath); } catch { /* ignore */ }
+  }
+}
+
+// ── 소스 읽기: 청크 분할 + 병렬 ──
+async function readSourceChunked(
+  wbName: string, shName: string, rows: number, cols: number,
+  startRow: number, startCol: number, prop: string, chunkSize: number
+): Promise<(string | number | null)[][]> {
+  const chunks: { offset: number; chunkRows: number }[] = [];
+  for (let offset = 0; offset < rows; offset += chunkSize) {
+    chunks.push({ offset, chunkRows: Math.min(chunkSize, rows - offset) });
+  }
+  const batchId = randomUUID();
+  const tmpFiles = chunks.map((_, i) => join(tmpdir(), `xlmcp_cpr_${batchId}_${i}.json`));
+
+  try {
+    await Promise.all(
+      chunks.map((chunk, i) => {
+        const escapedPath = tmpFiles[i].replace(/\\/g, "\\\\");
+        const r1 = startRow + chunk.offset;
+        const r2 = r1 + chunk.chunkRows - 1;
+        const c2 = startCol + cols - 1;
+        return runPS(`
+          $wb = Resolve-Workbook ${wbName}
+          $ws = Resolve-Sheet $wb ${shName}
+          $r = $ws.Range($ws.Cells.Item(${r1}, ${startCol}), $ws.Cells.Item(${r2}, ${c2}))
+          $values = $r.${prop}
+          ${buildReadScript(chunk.chunkRows, cols)}
+          $json = ConvertTo-Json @($data) -Depth 5 -Compress
+          [System.IO.File]::WriteAllText('${escapedPath}', $json, [System.Text.Encoding]::UTF8)
+        `);
+      })
+    );
+    const allData: (string | number | null)[][] = [];
+    for (const f of tmpFiles) {
+      allData.push(...JSON.parse(readFileSync(f, "utf-8")));
+    }
+    return allData;
+  } finally {
+    for (const f of tmpFiles) {
+      try { unlinkSync(f); } catch { /* ignore */ }
+    }
+  }
+}
+
+// ── PS 읽기 스크립트 (Rank 방어) ──
+function buildReadScript(rows: number, cols: number): string {
+  return `
+      $data = @()
+      if ($values -isnot [System.Array]) {
+        $data = ,@(,$(if ($values -ne $null) { $values } else { $null }))
+      } elseif ($values.Rank -eq 2) {
+        for ($i = 1; $i -le ${rows}; $i++) {
+          $row = @()
+          for ($j = 1; $j -le ${cols}; $j++) {
+            $v = $values[$i,$j]
+            $row += $(if ($v -ne $null) { $v } else { $null })
+          }
+          $data += ,@($row)
+        }
+      } else {
+        $row = @()
+        for ($k = 0; $k -lt $values.Length; $k++) {
+          $v = $values[$k]
+          $row += $(if ($v -ne $null) { $v } else { $null })
+        }
+        if (${rows} -eq 1) {
+          $data = ,@($row)
+        } else {
+          foreach ($v in $row) { $data += ,@(,$v) }
+        }
+      }`;
 }

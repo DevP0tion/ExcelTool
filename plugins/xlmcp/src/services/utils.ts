@@ -51,3 +51,14 @@ export function textContent(data: unknown) {
 export function errorContent(message: string) {
   return { content: [{ type: "text" as const, text: JSON.stringify({ error: message }) }], isError: true };
 }
+
+/** hex RGB → [r, g, b] 변환 */
+export function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace("#", "");
+  return [parseInt(h.substring(0, 2), 16), parseInt(h.substring(2, 4), 16), parseInt(h.substring(4, 6), 16)];
+}
+
+/** [r, g, b] → Excel OLE 색상값 변환 */
+export function rgbToOle([r, g, b]: [number, number, number]): number {
+  return r + g * 256 + b * 65536;
+}

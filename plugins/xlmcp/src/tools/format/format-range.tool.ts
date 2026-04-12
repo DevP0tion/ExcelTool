@@ -1,21 +1,8 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { runPS } from "../../services/powershell.js";
-import { psEscape, textContent } from "../../services/utils.js";
+import { psEscape, textContent, hexToRgb, rgbToOle } from "../../services/utils.js";
 import { workbookParam, sheetParam } from "../../schemas/common.js";
-
-function hexToRgb(hex: string): [number, number, number] {
-  const h = hex.replace("#", "");
-  return [
-    parseInt(h.substring(0, 2), 16),
-    parseInt(h.substring(2, 4), 16),
-    parseInt(h.substring(4, 6), 16),
-  ];
-}
-
-function rgbToOle([r, g, b]: [number, number, number]): number {
-  return r + g * 256 + b * 65536;
-}
 
 export function register(server: McpServer) {
   server.registerTool(

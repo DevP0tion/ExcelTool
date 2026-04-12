@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { runPS } from "../../services/powershell.js";
-import { psEscape, textContent } from "../../services/utils.js";
+import { psEscape, textContent, hexToRgb, rgbToOle } from "../../services/utils.js";
 import { workbookParam, sheetParam } from "../../schemas/common.js";
 
 export function register(server: McpServer) {
@@ -71,12 +71,10 @@ export function register(server: McpServer) {
 
       const fmtCmds: string[] = [];
       if (fontColor) {
-        const [r, g, b_] = hexToRgb(fontColor);
-        fmtCmds.push(`$fc.Font.Color = ${r + g * 256 + b_ * 65536}`);
+        fmtCmds.push(`$fc.Font.Color = ${rgbToOle(hexToRgb(fontColor))}`);
       }
       if (bgColor) {
-        const [r, g, b_] = hexToRgb(bgColor);
-        fmtCmds.push(`$fc.Interior.Color = ${r + g * 256 + b_ * 65536}`);
+        fmtCmds.push(`$fc.Interior.Color = ${rgbToOle(hexToRgb(bgColor))}`);
       }
       if (bold !== undefined) fmtCmds.push(`$fc.Font.Bold = $${bold}`);
 
@@ -90,9 +88,4 @@ export function register(server: McpServer) {
       return textContent({ success: true });
     }
   );
-}
-
-function hexToRgb(hex: string): [number, number, number] {
-  const h = hex.replace("#", "");
-  return [parseInt(h.substring(0, 2), 16), parseInt(h.substring(2, 4), 16), parseInt(h.substring(4, 6), 16)];
 }

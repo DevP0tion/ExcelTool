@@ -66,12 +66,17 @@ async function writeInline(
   cols: number
 ) {
   const formulas: FormulaEntry[] = [];
+  // TS에서 숫자 감지 (chunked와 동일한 Number() 사용)
   const psRows = data
     .map((row, ri) => {
       const cells = row.map((v, ci) => {
         if (v.startsWith("=")) {
           formulas.push({ rowOffset: ri, colOffset: ci, formula: v });
-          return "''";
+          return "$null";
+        }
+        const num = Number(v);
+        if (v !== "" && !isNaN(num)) {
+          return String(num);
         }
         return `'${psEscape(v)}'`;
       });
@@ -98,13 +103,7 @@ async function writeInline(
     for ($i = 0; $i -lt ${rows}; $i++) {
       $row = @($srcData[$i])
       for ($j = 0; $j -lt ${cols}; $j++) {
-        $val = $row[$j]
-        $num = 0.0
-        if ([double]::TryParse($val, [ref]$num)) {
-          $arr[$i,$j] = $num
-        } else {
-          $arr[$i,$j] = $val
-        }
+        $arr[$i,$j] = $row[$j]
       }
     }
     $targetRange.Value2 = $arr

@@ -64,7 +64,7 @@ class Session {
         throw $_
       } finally {
         # COM 참조 정리 (변수가 존재하는 경우만)
-        foreach ($__v in @('r','srcWs','dstWs','targetRange','t','pvt','cache','chart')) {
+        foreach ($__v in @('r','src','srcWs','dstWs','dst','dest','targetRange','start','chunkStart','chunkEnd','pos','t','pvt','pf','cache','chart','fc','first','current','n','existing')) {
           $__obj = Get-Variable -Name $__v -ValueOnly -ErrorAction SilentlyContinue
           if ($__obj -ne $null) {
             try { [void][System.Runtime.InteropServices.Marshal]::ReleaseComObject($__obj) } catch {}
@@ -282,7 +282,7 @@ class SessionPool {
     }
   }
 
-  // ── 세션에서 실행 ──
+  // ── 세션에서 실행 (사망 시 1회 재시도) ──
   private async invokeOnSession(
     session: Session,
     script: string,
@@ -296,6 +296,19 @@ class SessionPool {
     } catch (err: unknown) {
       if (session.isProcessDead(err)) {
         await this.recoverSession(session, isExclusive);
+        // 복구된 세션으로 1회 재시도
+        const recovered = isExclusive
+          ? this.exclusiveSession
+          : this.generalPool.find((s) => s.id === session.id);
+        if (recovered && recovered.alive) {
+          try {
+            const result = await recovered.invoke(script, INVOKE_TIMEOUT);
+            this.totalProcessed++;
+            return result;
+          } catch {
+            // 재시도도 실패 → 원본 에러 throw
+          }
+        }
       }
       throw SessionPool.formatError(err);
     } finally {
