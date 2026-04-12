@@ -1,5 +1,5 @@
 {
   "name": "xlmcp",
-  "description": "Excel 자동화 MCP 서버 (41개 도구). 세션 풀링, 가상 클립보드, 청크 병렬 쓰기.",
+  "description": "Excel 자동화 MCP 서버 (42개 도구). 세션 풀링, 가상 클립보드, 청크 병렬 쓰기.",
   "version": "0.3.0"
 }

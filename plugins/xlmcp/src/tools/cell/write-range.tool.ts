@@ -161,6 +161,13 @@ async function writeChunked(
   }
 
   try {
+    // ScreenUpdating/Calculation 억제
+    await runPS(`
+      $wb = Resolve-Workbook ${wbName}
+      $excel.ScreenUpdating = $false
+      $excel.Calculation = -4135
+    `);
+
     // 병렬 쓰기 (General Pool 라운드 로빈)
     await Promise.all(
       chunks.map((chunk, i) => {
@@ -214,6 +221,12 @@ async function writeChunked(
         // ignore
       }
     }
+    // ScreenUpdating/Calculation 복원
+    await runPS(`
+      $wb = Resolve-Workbook ${wbName}
+      $excel.Calculation = -4105
+      $excel.ScreenUpdating = $true
+    `).catch(() => { /* 복원 실패 무시 */ });
   }
 
   return textContent({

@@ -47,7 +47,7 @@ Excel을 직접 제어하는 MCP 서버.
 }
 ```
 
-## 도구 (41개)
+## 도구 (42개)
 
 ### Workbook (6)
 
@@ -131,10 +131,11 @@ Excel을 직접 제어하는 MCP 서버.
 | `excel_set_data_validation` | 데이터 유효성 검사 (드롭다운, 숫자 범위, 수식 등) |
 | `excel_set_conditional_format` | 조건부 서식 (셀 값, 수식, 색조, 데이터 막대) |
 
-### View (3)
+### View (4)
 
 | 도구 | 설명 |
 |---|---|
 | `excel_freeze_panes` | 틀 고정/해제 |
 | `excel_named_range` | 이름 정의 조회/생성/삭제 |
 | `excel_pool_status` | 세션 풀 상태 조회 (세션 수, busy/alive, 큐 길이, 처리 통계) |
+| `excel_cancel_queued` | 대기 중인 작업 취소 (단건 또는 전체). 실행 중 작업은 취소 불가 |

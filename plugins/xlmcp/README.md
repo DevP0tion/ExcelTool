@@ -16,7 +16,7 @@ Excel을 직접 제어하는 MCP 서버.
 - **대용량 쓰기**: 500행 이상 시 자동 청크 분할 + JSON 임시 파일 + 병렬 쓰기.
 - **가상 클립보드**: 값/수식 복사 시 시스템 클립보드 미사용. 서식 복사만 시스템 클립보드 사용.
 
-## 도구 (41개)
+## 도구 (42개)
 
 ### Workbook (6)
 
@@ -100,13 +100,14 @@ Excel을 직접 제어하는 MCP 서버.
 | `excel_set_data_validation` | 데이터 유효성 검사 (드롭다운, 숫자 범위, 수식 등) |
 | `excel_set_conditional_format` | 조건부 서식 (셀 값, 수식, 색조, 데이터 막대) |
 
-### View (3)
+### View (4)
 
 | 도구 | 설명 |
 |---|---|
 | `excel_freeze_panes` | 틀 고정/해제 |
 | `excel_named_range` | 이름 정의 조회/생성/삭제 |
 | `excel_pool_status` | 세션 풀 상태 조회 (세션 수, busy/alive, 큐 길이, 처리 통계) |
+| `excel_cancel_queued` | 대기 중인 작업 취소 (단건 또는 전체). 실행 중 작업은 취소 불가 |
 
 ## 구조
 
@@ -128,7 +129,7 @@ src/
     ├── chart/               # 1 도구
     ├── pivot/               # 1 도구
     ├── validation/          # 2 도구
-    └── view/                # 3 도구 (+ 1 exclusive)
+    └── view/                # 4 도구 (+ 1 exclusive)
 ```
 
 각 카테고리 폴더에 `{도구명}.tool.ts` + `index.ts`로 구성. 도구 추가 시 `.tool.ts` 파일 생성 후 해당 `index.ts`에 import 추가.

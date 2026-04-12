@@ -32,10 +32,10 @@ export function register(server: McpServer) {
         if (typeof index === "number") {
           rangeExpr = `$ws.Columns("${index}:${index + count - 1}")`;
         } else {
-          // 문자 입력: "A" → Columns("A:A"), count > 1 시 열 오프셋 계산
-          const startCode = index.toUpperCase().charCodeAt(0);
-          const endLetter = String.fromCharCode(startCode + count - 1);
-          rangeExpr = `$ws.Columns("${index.toUpperCase()}:${endLetter}")`;
+          // 문자 입력: "A", "AA" 등 → 열 번호 변환 → 오프셋 → 다시 문자로
+          const startCol = colLetterToNum(index);
+          const endCol = startCol + count - 1;
+          rangeExpr = `$ws.Columns("${index.toUpperCase()}:${colNumToLetter(endCol)}")`;
         }
       }
       const cmd = action === "insert" ? "Insert()" : "Delete()";
@@ -47,4 +47,24 @@ export function register(server: McpServer) {
       return textContent({ success: true });
     }
   );
+}
+
+// "A"→1, "Z"→26, "AA"→27, "AZ"→52
+function colLetterToNum(letter: string): number {
+  let num = 0;
+  for (const ch of letter.toUpperCase()) {
+    num = num * 26 + (ch.charCodeAt(0) - 64);
+  }
+  return num;
+}
+
+// 1→"A", 26→"Z", 27→"AA", 52→"AZ"
+function colNumToLetter(num: number): string {
+  let result = "";
+  while (num > 0) {
+    const mod = (num - 1) % 26;
+    result = String.fromCharCode(65 + mod) + result;
+    num = Math.floor((num - 1) / 26);
+  }
+  return result;
 }
