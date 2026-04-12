@@ -1,7 +1,25 @@
 {
   "name": "xlmcp",
   "version": "0.3.0",
+  "description": "Excel automation MCP server via PowerShell COM. 48 tools — session pooling, chunked parallel I/O, virtual clipboard. Windows only.",
   "license": "MIT",
+  "author": "DevP0tion",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DevP0tion/XLMCP"
+  },
+  "homepage": "https://github.com/DevP0tion/XLMCP",
+  "keywords": [
+    "mcp",
+    "excel",
+    "powershell",
+    "com",
+    "automation",
+    "spreadsheet",
+    "claude",
+    "model-context-protocol"
+  ],
+  "os": ["win32"],
   "type": "module",
   "bin": {
     "xlmcp": "dist/index.js"
