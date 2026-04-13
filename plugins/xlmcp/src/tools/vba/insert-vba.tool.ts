@@ -13,7 +13,7 @@ export function register(server: McpServer) {
     "excel_insert_vba",
     {
       title: "Add VBA Module",
-      description: "Add VBA module with code. Requires VBA project access trust.",
+      description: "Add VBA module with code. Only use when the user explicitly requests macro creation. Never auto-generate.",
       inputSchema: {
         workbook: workbookParam,
         name: z.string().describe("Module name (e.g. MyMacro)"),
