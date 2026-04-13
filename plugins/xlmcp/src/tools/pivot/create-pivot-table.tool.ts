@@ -8,28 +8,28 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_create_pivot_table",
     {
-      title: "피벗 테이블 생성",
-      description: "데이터 범위로 피벗 테이블을 생성합니다.",
+      title: "Create Pivot Table",
+      description: "Create pivot table from data range.",
       inputSchema: {
         workbook: workbookParam,
         sheet: sheetParam,
-        sourceRange: z.string().describe("데이터 소스 범위 (예: A1:D100)"),
-        destCell: z.string().describe("피벗 테이블 위치 (예: F1 또는 다른 시트의 Sheet2!A1)"),
-        name: z.string().optional().describe("피벗 테이블 이름"),
-        rowFields: z.array(z.string()).optional().describe("행 필드 이름 배열"),
-        columnFields: z.array(z.string()).optional().describe("열 필드 이름 배열"),
+        sourceRange: z.string().describe("Source range (e.g. A1:D100)"),
+        destCell: z.string().describe("Pivot table location (e.g. F1 or Sheet2!A1)"),
+        name: z.string().optional().describe("Pivot table name"),
+        rowFields: z.array(z.string()).optional().describe("Row field names"),
+        columnFields: z.array(z.string()).optional().describe("Column field names"),
         dataFields: z
           .array(
             z.object({
-              field: z.string().describe("필드 이름"),
+              field: z.string().describe("Field name"),
               function: z
                 .enum(["sum", "count", "average", "max", "min"])
                 .default("sum")
-                .describe("집계 함수"),
+                .describe("Aggregate function"),
             })
           )
           .optional()
-          .describe("데이터(값) 필드 배열"),
+          .describe("Data field array"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },

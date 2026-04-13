@@ -7,10 +7,10 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_create_workbook",
     {
-      title: "새 워크북 생성",
-      description: "새 빈 워크북을 생성합니다. savePath를 지정하면 즉시 저장합니다.",
+      title: "Create Workbook",
+      description: "Create a new empty workbook. Saves immediately if savePath is given.",
       inputSchema: {
-        savePath: z.string().optional().describe("저장할 절대 경로 (.xlsx). 생략 시 저장하지 않음"),
+        savePath: z.string().optional().describe("Absolute save path (.xlsx). Not saved if omitted"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },

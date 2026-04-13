@@ -29,7 +29,7 @@ export function parseJSON<T = unknown>(raw: string): T {
     else start = Math.min(objStart, arrStart);
 
     if (start === -1) {
-      throw new Error(`JSON 파싱 실패: ${trimmed.slice(0, 200)}`);
+      throw new Error(`JSON parse failed: ${trimmed.slice(0, 200)}`);
     }
 
     // 해당 지점부터 파싱 시도 (끝에서부터 줄여가며)
@@ -37,7 +37,7 @@ export function parseJSON<T = unknown>(raw: string): T {
     try {
       return JSON.parse(sub);
     } catch {
-      throw new Error(`JSON 파싱 실패: ${sub.slice(0, 200)}`);
+      throw new Error(`JSON parse failed: ${sub.slice(0, 200)}`);
     }
   }
 }

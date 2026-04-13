@@ -8,21 +8,21 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_insert_image",
     {
-      title: "이미지 삽입",
+      title: "Insert Image",
       description:
-        "이미지 파일을 시트에 삽입합니다. 이미지는 엑셀 파일 내에 임베딩되므로 원본 파일을 삭제해도 유지됩니다.",
+        "Insert image file into sheet. Embedded in workbook, persists after source deletion.",
       inputSchema: {
         workbook: workbookParam,
         sheet: sheetParam,
-        filePath: z.string().describe("이미지 절대 경로 (PNG, JPG, BMP, GIF)"),
-        cell: z.string().describe("배치 기준 셀 (예: E1)"),
-        width: z.number().optional().describe("너비 px. 생략 시 원본 크기"),
-        height: z.number().optional().describe("높이 px. 생략 시 원본 크기"),
-        name: z.string().optional().describe("Shape 이름. 생략 시 자동"),
+        filePath: z.string().describe("Absolute image path (PNG, JPG, BMP, GIF)"),
+        cell: z.string().describe("Anchor cell (e.g. E1)"),
+        width: z.number().optional().describe("Width px. Original size if omitted"),
+        height: z.number().optional().describe("Height px. Original size if omitted"),
+        name: z.string().optional().describe("Shape name. Auto if omitted"),
         keepAspect: z
           .boolean()
           .default(true)
-          .describe("width 또는 height 하나만 지정 시 비율 유지"),
+          .describe("Keep aspect ratio when only width or height is set"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },
@@ -54,7 +54,7 @@ export function register(server: McpServer) {
       const raw = await runPS(`
         $imgPath = '${psEscape(filePath)}'
         if (-not (Test-Path $imgPath)) {
-          throw "이미지 파일을 찾을 수 없습니다: $imgPath"
+          throw "Image file not found: $imgPath"
         }
         $wb = Resolve-Workbook ${wbName}
         $ws = Resolve-Sheet $wb ${shName}

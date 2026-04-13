@@ -8,15 +8,15 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_set_column_width",
     {
-      title: "열 너비 설정",
-      description: "열 너비를 설정합니다. 'auto'로 자동 맞춤 가능.",
+      title: "Set Column Width",
+      description: "Set column width. Use 'auto' for auto-fit.",
       inputSchema: {
         workbook: workbookParam,
         sheet: sheetParam,
-        columns: z.string().describe("열 범위 (예: 'A:C', 'B:B')"),
+        columns: z.string().describe("Column range (e.g. 'A:C', 'B:B')"),
         width: z
           .union([z.number(), z.literal("auto")])
-          .describe("너비 값(숫자) 또는 'auto'"),
+          .describe("Width (number) or 'auto'"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },

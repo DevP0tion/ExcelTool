@@ -4,10 +4,10 @@ import { z } from "zod";
 export const workbookParam = z
   .string()
   .optional()
-  .describe("워크북 이름. 생략하면 현재 활성 워크북 사용");
+  .describe("Workbook name. Uses active workbook if omitted");
 
 /** 시트 이름 (생략 시 ActiveSheet) */
 export const sheetParam = z
   .string()
   .optional()
-  .describe("시트 이름. 생략하면 현재 활성 시트 사용");
+  .describe("Sheet name. Uses active sheet if omitted");

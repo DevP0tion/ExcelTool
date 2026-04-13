@@ -7,8 +7,8 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_list_tables",
     {
-      title: "표 목록",
-      description: "시트 내 모든 표(ListObject)의 이름, 범위, 스타일, 행/열 수를 반환합니다.",
+      title: "List Tables",
+      description: "Returns all tables: name, range, style, row/column count.",
       inputSchema: {
         workbook: workbookParam,
         sheet: sheetParam,

@@ -12,18 +12,16 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_insert_vba",
     {
-      title: "VBA 모듈 추가",
-      description: `VBA 모듈을 추가하고 코드를 삽입합니다.
-⚠️ Excel 옵션 > 보안 센터 > 매크로 설정에서 "프로그래밍 방식 VBA 프로젝트 액세스 신뢰"가 켜져 있어야 합니다.
-⚠️ VBA를 저장하려면 .xlsm 형식으로 저장해야 합니다.`,
+      title: "Add VBA Module",
+      description: "Add VBA module with code. Requires VBA project access trust.",
       inputSchema: {
         workbook: workbookParam,
-        name: z.string().describe("모듈 이름 (예: MyMacro)"),
-        code: z.string().describe("VBA 소스 코드"),
+        name: z.string().describe("Module name (e.g. MyMacro)"),
+        code: z.string().describe("VBA source code"),
         type: z
           .enum(["module", "classModule", "form"])
           .default("module")
-          .describe("모듈 유형. module(표준), classModule(클래스), form(폼)"),
+          .describe("Type: module, classModule, or form"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },

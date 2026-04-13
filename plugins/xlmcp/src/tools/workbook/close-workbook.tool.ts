@@ -8,11 +8,11 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_close_workbook",
     {
-      title: "워크북 닫기",
-      description: "워크북을 닫습니다. save 옵션으로 저장 여부를 지정합니다.",
+      title: "Close Workbook",
+      description: "Close workbook. Set save to true to save before closing.",
       inputSchema: {
         workbook: workbookParam,
-        save: z.boolean().default(false).describe("닫기 전 저장 여부"),
+        save: z.boolean().default(false).describe("Save before closing"),
       },
       annotations: { readOnlyHint: false, destructiveHint: true },
     },

@@ -8,18 +8,17 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_export_range_image",
     {
-      title: "범위 이미지 내보내기",
-      description: `셀 범위를 이미지 파일(PNG/JPG/BMP/GIF)로 내보냅니다.
-시스템 클립보드를 사용하므로 실행 중 다른 작업은 일시 차단됩니다.`,
+      title: "Export Range as Image",
+      description: `Export range as image (PNG/JPG/BMP/GIF). Uses clipboard (exclusive).`,
       inputSchema: {
         workbook: workbookParam,
         sheet: sheetParam,
-        range: z.string().describe("캡처할 범위 (예: A1:D10)"),
-        savePath: z.string().describe("저장 절대 경로 (예: F:\\output\\capture.png)"),
+        range: z.string().describe("Range to capture (e.g. A1:D10)"),
+        savePath: z.string().describe("Absolute save path (e.g. F:\\output\\capture.png)"),
         format: z
           .enum(["png", "jpg", "bmp", "gif"])
           .default("png")
-          .describe("이미지 형식"),
+          .describe("Image format"),
       },
       annotations: { readOnlyHint: true, destructiveHint: false },
     },

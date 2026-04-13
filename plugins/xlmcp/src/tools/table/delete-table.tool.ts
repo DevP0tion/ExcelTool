@@ -8,13 +8,13 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_delete_table",
     {
-      title: "표 삭제",
-      description: "표(ListObject)를 삭제합니다. 데이터는 유지하고 표 서식만 제거합니다. clearData를 true로 하면 데이터도 삭제합니다.",
+      title: "Delete Table",
+      description: "Remove table. Data preserved unless clearData is true.",
       inputSchema: {
         workbook: workbookParam,
         sheet: sheetParam,
-        name: z.string().describe("삭제할 표 이름"),
-        clearData: z.boolean().default(false).describe("true이면 데이터도 함께 삭제"),
+        name: z.string().describe("Table name to delete"),
+        clearData: z.boolean().default(false).describe("Also delete data"),
       },
       annotations: { readOnlyHint: false, destructiveHint: true },
     },

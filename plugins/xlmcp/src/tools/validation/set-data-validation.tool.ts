@@ -8,21 +8,21 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_set_data_validation",
     {
-      title: "데이터 유효성 검사",
-      description: "셀에 입력 규칙을 설정합니다. 드롭다운 목록, 숫자 범위, 텍스트 길이 등을 제한할 수 있습니다.",
+      title: "Data Validation",
+      description: "Set cell input rules: dropdown list, number range, text length, etc.",
       inputSchema: {
         workbook: workbookParam,
         sheet: sheetParam,
-        range: z.string().describe("대상 범위 (예: B2:B100)"),
+        range: z.string().describe("Target range (e.g. B2:B100)"),
         type: z
           .enum(["list", "whole", "decimal", "textLength", "custom", "clear"])
-          .describe("유효성 유형. clear는 기존 규칙 제거"),
+          .describe("Validation type. 'clear' removes rules"),
         formula: z
           .string()
           .optional()
-          .describe("list: 쉼표 구분 값 (예: 'A,B,C') 또는 범위참조. whole/decimal: 최소값. custom: 수식"),
-        formula2: z.string().optional().describe("whole/decimal/textLength: 최대값"),
-        errorMessage: z.string().optional().describe("오류 메시지"),
+          .describe("list: comma-separated or range ref. whole/decimal: min. custom: formula"),
+        formula2: z.string().optional().describe("whole/decimal/textLength: max value"),
+        errorMessage: z.string().optional().describe("Error message"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },

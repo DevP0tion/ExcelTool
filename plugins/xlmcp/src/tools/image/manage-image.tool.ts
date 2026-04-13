@@ -8,20 +8,20 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_manage_image",
     {
-      title: "이미지 관리",
-      description: "삽입된 이미지를 삭제, 이동, 크기 변경합니다. 이미지 이름은 excel_list_images로 확인할 수 있습니다.",
+      title: "Manage Image",
+      description: "Delete, move, or resize an image.",
       inputSchema: {
         workbook: workbookParam,
         sheet: sheetParam,
-        name: z.string().describe("이미지(Shape) 이름"),
-        action: z.enum(["delete", "move", "resize"]).describe("동작: delete(삭제), move(이동), resize(크기 변경)"),
-        cell: z.string().optional().describe("move 시 대상 셀 (예: A10)"),
-        width: z.number().optional().describe("resize 시 너비 px"),
-        height: z.number().optional().describe("resize 시 높이 px"),
+        name: z.string().describe("Image (Shape) name"),
+        action: z.enum(["delete", "move", "resize"]).describe("Action: delete, move, or resize"),
+        cell: z.string().optional().describe("Target cell for move (e.g. A10)"),
+        width: z.number().optional().describe("Width px for resize"),
+        height: z.number().optional().describe("Height px for resize"),
         keepAspect: z
           .boolean()
           .default(true)
-          .describe("resize 시 width 또는 height 하나만 지정하면 비율 유지"),
+          .describe("Keep aspect ratio when only one dimension is set"),
       },
       annotations: { readOnlyHint: false, destructiveHint: true },
     },
@@ -39,7 +39,7 @@ export function register(server: McpServer) {
       }
 
       if (action === "move") {
-        if (!cell) throw new Error("move 시 cell 파라미터가 필요합니다.");
+        if (!cell) throw new Error("Cell parameter is required for move.");
         const raw = await runPS(`
           $wb = Resolve-Workbook ${wbName}
           $ws = Resolve-Sheet $wb ${shName}
@@ -72,7 +72,7 @@ export function register(server: McpServer) {
           ? `$ratio = $s.Width / $s.Height; $s.Height = ${height}; $s.Width = ${height} * $ratio`
           : `$s.LockAspectRatio = 0; $s.Height = ${height}`;
       } else {
-        throw new Error("resize 시 width 또는 height가 필요합니다.");
+        throw new Error("Width or height is required for resize.");
       }
 
       const raw = await runPS(`

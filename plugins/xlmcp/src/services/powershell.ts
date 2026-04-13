@@ -22,7 +22,7 @@ const INIT_SCRIPT = `
       return $excel.Workbooks.Item($Name)
     }
     if (-not $excel.ActiveWorkbook) {
-      throw "열려 있는 워크북이 없습니다."
+      throw "No workbook is open."
     }
     return $excel.ActiveWorkbook
   }
@@ -119,7 +119,7 @@ class Session {
       msg.includes("process exited") ||
       msg.includes("invoke called after") ||
       msg.includes("EPIPE") ||
-      msg.includes("타임아웃")
+      msg.includes("Timeout")
     );
   }
 
@@ -138,7 +138,7 @@ class Session {
 
   private static withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
     return new Promise<T>((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error(`타임아웃: ${ms}ms 초과`)), ms);
+      const timer = setTimeout(() => reject(new Error(`Timeout: ${ms}ms exceeded`)), ms);
       promise.then(
         (v) => { clearTimeout(timer); resolve(v); },
         (e) => { clearTimeout(timer); reject(e); }
@@ -468,7 +468,7 @@ class SessionPool {
     const idx = this.generalQueue.findIndex((t) => t.id === taskId);
     if (idx === -1) return false;
     const [task] = this.generalQueue.splice(idx, 1);
-    task.reject(new Error(JSON.stringify({ error: true, message: `작업 #${taskId} 취소됨`, type: "Cancelled" })));
+    task.reject(new Error(JSON.stringify({ error: true, message: `Task #${taskId} cancelled`, type: "Cancelled" })));
     return true;
   }
 
@@ -476,7 +476,7 @@ class SessionPool {
   cancelAllTasks(): number {
     const count = this.generalQueue.length;
     for (const task of this.generalQueue) {
-      task.reject(new Error(JSON.stringify({ error: true, message: `작업 #${task.id} 취소됨`, type: "Cancelled" })));
+      task.reject(new Error(JSON.stringify({ error: true, message: `Task #${task.id} cancelled`, type: "Cancelled" })));
     }
     this.generalQueue = [];
     return count;
@@ -490,7 +490,7 @@ class SessionPool {
     }
     // 큐 잔여 작업 reject
     for (const task of this.generalQueue) {
-      task.reject(new Error(JSON.stringify({ error: true, message: "풀 종료됨", type: "PoolDisposed" })));
+      task.reject(new Error(JSON.stringify({ error: true, message: "Pool disposed", type: "PoolDisposed" })));
     }
     this.generalQueue = [];
     await Promise.all([

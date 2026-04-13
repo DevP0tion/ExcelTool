@@ -8,15 +8,15 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_find_replace",
     {
-      title: "찾기/바꾸기",
-      description: "시트 내에서 텍스트를 찾거나 바꿉니다. replace를 생략하면 찾기만 수행합니다.",
+      title: "Find/Replace",
+      description: "Find or replace text. Find-only if replace is omitted.",
       inputSchema: {
         workbook: workbookParam,
         sheet: sheetParam,
-        find: z.string().describe("찾을 텍스트"),
-        replace: z.string().optional().describe("바꿀 텍스트. 생략 시 찾기만 수행"),
-        matchCase: z.boolean().default(false).describe("대소문자 구분"),
-        range: z.string().optional().describe("검색 범위. 생략 시 전체 시트"),
+        find: z.string().describe("Text to find"),
+        replace: z.string().optional().describe("Replacement text. Find-only if omitted"),
+        matchCase: z.boolean().default(false).describe("Case-sensitive"),
+        range: z.string().optional().describe("Search range. Entire sheet if omitted"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },

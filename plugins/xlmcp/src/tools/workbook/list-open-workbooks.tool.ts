@@ -6,8 +6,8 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_list_open_workbooks",
     {
-      title: "열린 워크북 목록",
-      description: "현재 Excel에 열려 있는 모든 워크북의 이름과 경로를 반환합니다.",
+      title: "List Open Workbooks",
+      description: "Returns names and paths of all open workbooks.",
       inputSchema: {},
       annotations: { readOnlyHint: true, destructiveHint: false },
     },

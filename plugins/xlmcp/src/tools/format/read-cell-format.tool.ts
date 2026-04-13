@@ -8,12 +8,12 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_read_cell_format",
     {
-      title: "셀 서식 읽기",
-      description: "셀의 현재 서식 정보를 반환합니다. 폰트, 배경색, 정렬, 테두리, 병합 여부 등을 포함합니다.",
+      title: "Read Cell Format",
+      description: "Returns cell formatting: font, background, alignment, borders, merge status.",
       inputSchema: {
         workbook: workbookParam,
         sheet: sheetParam,
-        cell: z.string().describe("셀 주소 (예: A1)"),
+        cell: z.string().describe("Cell address (e.g. A1)"),
       },
       annotations: { readOnlyHint: true, destructiveHint: false },
     },

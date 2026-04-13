@@ -8,12 +8,12 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_read_cell",
     {
-      title: "셀 읽기",
-      description: "단일 셀의 값, 수식, 표시 텍스트를 반환합니다.",
+      title: "Read Cell",
+      description: "Returns value, formula, and display text of a cell.",
       inputSchema: {
         workbook: workbookParam,
         sheet: sheetParam,
-        cell: z.string().describe("셀 주소 (예: A1, B3)"),
+        cell: z.string().describe("Cell address (e.g. A1, B3)"),
       },
       annotations: { readOnlyHint: true, destructiveHint: false },
     },

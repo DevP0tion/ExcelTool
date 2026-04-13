@@ -8,16 +8,16 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_clear_range",
     {
-      title: "범위 삭제",
-      description: "범위의 내용, 서식 또는 전체를 삭제합니다.",
+      title: "Clear Range",
+      description: "Clear content, formats, or all in a range.",
       inputSchema: {
         workbook: workbookParam,
         sheet: sheetParam,
-        range: z.string().describe("범위 주소 (예: A1:D10)"),
+        range: z.string().describe("Range address (e.g. A1:D10)"),
         mode: z
           .enum(["values", "formats", "all"])
           .default("all")
-          .describe("삭제 대상: values(값만), formats(서식만), all(전체)"),
+          .describe("Target: values, formats, or all"),
       },
       annotations: { readOnlyHint: false, destructiveHint: true },
     },

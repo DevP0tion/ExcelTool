@@ -8,15 +8,15 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_sort_range",
     {
-      title: "범위 정렬",
-      description: "범위를 지정한 열 기준으로 정렬합니다.",
+      title: "Sort Range",
+      description: "Sort range by a column.",
       inputSchema: {
         workbook: workbookParam,
         sheet: sheetParam,
-        range: z.string().describe("정렬할 범위 (예: A1:D100)"),
-        sortBy: z.string().describe("정렬 기준 열 주소 (예: B1)"),
-        order: z.enum(["asc", "desc"]).default("asc").describe("정렬 순서"),
-        hasHeader: z.boolean().default(true).describe("첫 행이 헤더인지 여부"),
+        range: z.string().describe("Range to sort (e.g. A1:D100)"),
+        sortBy: z.string().describe("Sort key column (e.g. B1)"),
+        order: z.enum(["asc", "desc"]).default("asc").describe("Sort order"),
+        hasHeader: z.boolean().default(true).describe("First row is header"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },

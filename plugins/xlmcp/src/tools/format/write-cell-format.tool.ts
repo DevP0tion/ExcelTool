@@ -7,7 +7,7 @@ import { workbookParam, sheetParam } from "../../schemas/common.js";
 const borderSchema = z
   .object({
     style: z.enum(["hairline", "thin", "medium", "thick"]).optional(),
-    color: z.string().optional().describe("RGB hex (예: 'FF0000')"),
+    color: z.string().optional().describe("RGB hex (e.g. 'FF0000')"),
   })
   .optional();
 
@@ -15,13 +15,13 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_write_cell_format",
     {
-      title: "셀 서식 일괄 적용",
+      title: "Write Cell Format",
       description:
-        "read_cell_format의 출력 형식과 동일한 구조로 서식을 일괄 적용합니다. 범위에도 적용 가능합니다.",
+        "Apply formatting using read_cell_format structure. Works on ranges.",
       inputSchema: {
         workbook: workbookParam,
         sheet: sheetParam,
-        range: z.string().describe("범위 주소 (예: A1 또는 A1:D10)"),
+        range: z.string().describe("Range address (e.g. A1 or A1:D10)"),
         font: z
           .object({
             name: z.string().optional(),
@@ -31,8 +31,8 @@ export function register(server: McpServer) {
             color: z.string().optional().describe("RGB hex"),
           })
           .optional()
-          .describe("폰트 설정"),
-        bgColor: z.string().optional().describe("배경 색상 RGB hex"),
+          .describe("Font settings"),
+        bgColor: z.string().optional().describe("Background color RGB hex"),
         hAlign: z.enum(["left", "center", "right", "general"]).optional(),
         vAlign: z.enum(["top", "center", "bottom"]).optional(),
         wrapText: z.boolean().optional(),
@@ -45,7 +45,7 @@ export function register(server: McpServer) {
             bottom: borderSchema,
           })
           .optional()
-          .describe("개별 테두리 설정"),
+          .describe("Per-edge border settings"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },
@@ -95,7 +95,7 @@ export function register(server: McpServer) {
         }
       }
 
-      if (cmds.length === 0) return textContent({ success: true, message: "변경 사항 없음" });
+      if (cmds.length === 0) return textContent({ success: true, message: "No changes" });
 
       await runPS(`
         $wb = Resolve-Workbook ${wbName}

@@ -14,14 +14,14 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_read_range_formulas",
     {
-      title: "범위 수식 읽기",
+      title: "Read Range Formulas",
       description:
-        "셀 범위의 수식을 2D 배열로 반환합니다. 수식이 없는 셀은 값을 반환합니다. 대용량 시 자동 청크 분할 병렬 읽기.",
+        "Read formulas as 2D array. Returns values for non-formula cells. Auto chunked parallel.",
       inputSchema: {
         workbook: workbookParam,
         sheet: sheetParam,
-        range: z.string().optional().describe("범위 주소 (예: A1:C10). 생략 시 UsedRange"),
-        chunkSize: z.number().int().optional().describe("청크 분할 행수. 기본 30"),
+        range: z.string().optional().describe("Range address (e.g. A1:C10). UsedRange if omitted"),
+        chunkSize: z.number().int().optional().describe("Chunk size in rows. Default 30"),
       },
       annotations: { readOnlyHint: true, destructiveHint: false },
     },

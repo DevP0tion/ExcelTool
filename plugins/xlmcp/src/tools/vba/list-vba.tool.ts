@@ -10,12 +10,11 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_list_vba",
     {
-      title: "VBA 모듈 목록",
-      description: `VBA 모듈 목록을 반환합니다. name을 지정하면 해당 모듈의 소스 코드도 반환합니다.
-⚠️ "프로그래밍 방식 VBA 프로젝트 액세스 신뢰"가 켜져 있어야 합니다.`,
+      title: "List VBA Modules",
+      description: "List VBA modules. Returns source code if name specified.",
       inputSchema: {
         workbook: workbookParam,
-        name: z.string().optional().describe("특정 모듈 이름. 지정 시 해당 모듈의 코드 반환"),
+        name: z.string().optional().describe("Module name. Returns source code if specified"),
       },
       annotations: { readOnlyHint: true, destructiveHint: false },
     },

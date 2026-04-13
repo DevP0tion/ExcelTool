@@ -8,12 +8,12 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_copy_sheet",
     {
-      title: "시트 복사",
-      description: "시트를 복사합니다. 같은 워크북 내에서 복사됩니다.",
+      title: "Copy Sheet",
+      description: "Copy sheet within the same workbook.",
       inputSchema: {
         workbook: workbookParam,
-        source: z.string().describe("원본 시트 이름"),
-        newName: z.string().optional().describe("복사본 시트 이름. 생략 시 자동 이름"),
+        source: z.string().describe("Source sheet name"),
+        newName: z.string().optional().describe("Name for the copy. Auto-named if omitted"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },

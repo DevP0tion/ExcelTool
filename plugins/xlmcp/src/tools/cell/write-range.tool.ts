@@ -20,17 +20,17 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_write_range",
     {
-      title: "범위 쓰기",
+      title: "Write Range",
       description:
-        "시작 셀부터 2D 배열 데이터를 입력합니다. 대용량 데이터는 자동 청크 분할 + 병렬 쓰기로 가속됩니다.",
+        "Write 2D array from start cell. Auto chunked parallel write for large data.",
       inputSchema: {
         workbook: workbookParam,
         sheet: sheetParam,
-        startCell: z.string().describe("시작 셀 주소 (예: A1)"),
+        startCell: z.string().describe("Start cell address (e.g. A1)"),
         data: z
           .array(z.array(z.string()))
-          .describe("2D 배열 데이터. 각 내부 배열이 한 행"),
-        chunkSize: z.number().int().optional().describe("청크 분할 행수. 이 값 이상이면 병렬 쓰기. 기본 30"),
+          .describe("2D array data. Each inner array is one row"),
+        chunkSize: z.number().int().optional().describe("Chunk size in rows for parallel write. Default 30"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },

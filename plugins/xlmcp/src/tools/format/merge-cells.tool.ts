@@ -8,13 +8,13 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_merge_cells",
     {
-      title: "셀 병합/해제",
-      description: "셀 범위를 병합하거나 병합을 해제합니다.",
+      title: "Merge/Unmerge Cells",
+      description: "Merge or unmerge a cell range.",
       inputSchema: {
         workbook: workbookParam,
         sheet: sheetParam,
-        range: z.string().describe("범위 주소 (예: A1:D1)"),
-        unmerge: z.boolean().default(false).describe("true이면 병합 해제"),
+        range: z.string().describe("Range address (e.g. A1:D1)"),
+        unmerge: z.boolean().default(false).describe("Set true to unmerge"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },

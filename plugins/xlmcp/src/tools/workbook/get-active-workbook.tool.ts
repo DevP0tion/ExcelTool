@@ -6,15 +6,15 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_get_active_workbook",
     {
-      title: "활성 워크북 정보",
-      description: "현재 활성화된 워크북의 이름, 경로, 시트 수, 활성 시트 이름을 반환합니다.",
+      title: "Active Workbook Info",
+      description: "Returns name, path, sheet count, and active sheet of the current workbook.",
       inputSchema: {},
       annotations: { readOnlyHint: true, destructiveHint: false },
     },
     async () => {
       const raw = await runPS(`
         $wb = $excel.ActiveWorkbook
-        if (-not $wb) { throw "열려 있는 워크북이 없습니다." }
+        if (-not $wb) { throw "No workbook is open." }
         $vbaTrusted = $false
         try { $null = $wb.VBProject.VBComponents.Count; $vbaTrusted = $true } catch {}
         @{

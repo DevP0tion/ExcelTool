@@ -8,12 +8,12 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_freeze_panes",
     {
-      title: "틀 고정",
-      description: "셀 위치 기준으로 틀을 고정하거나 해제합니다. cell을 지정하면 해당 셀의 위쪽 행과 왼쪽 열이 고정됩니다.",
+      title: "Freeze Panes",
+      description: "Freeze/unfreeze panes at cell position.",
       inputSchema: {
         workbook: workbookParam,
         sheet: sheetParam,
-        cell: z.string().optional().describe("고정 기준 셀 (예: B3 → 1~2행, A열 고정). 생략 시 해제"),
+        cell: z.string().optional().describe("Freeze cell (e.g. B3). Omit to unfreeze"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },

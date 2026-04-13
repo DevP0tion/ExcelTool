@@ -8,24 +8,24 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_set_conditional_format",
     {
-      title: "조건부 서식",
-      description: "범위에 조건부 서식 규칙을 추가합니다. clear 타입으로 기존 규칙을 제거할 수 있습니다.",
+      title: "Conditional Formatting",
+      description: "Add conditional format rule. Use 'clear' to remove all.",
       inputSchema: {
         workbook: workbookParam,
         sheet: sheetParam,
-        range: z.string().describe("대상 범위 (예: B2:B100)"),
+        range: z.string().describe("Target range (e.g. B2:B100)"),
         type: z
           .enum(["cellValue", "expression", "colorScale", "dataBar", "clear"])
-          .describe("규칙 유형. clear는 기존 규칙 모두 제거"),
+          .describe("Rule type. 'clear' removes all rules"),
         operator: z
           .enum(["greaterThan", "lessThan", "equal", "between", "notEqual"])
           .optional()
-          .describe("cellValue 유형의 비교 연산자"),
-        formula: z.string().optional().describe("조건 값 또는 수식 (예: '100', '=TODAY()')"),
-        formula2: z.string().optional().describe("between 연산자의 두 번째 값"),
-        fontColor: z.string().optional().describe("조건 충족 시 폰트 색상 RGB hex"),
-        bgColor: z.string().optional().describe("조건 충족 시 배경 색상 RGB hex"),
-        bold: z.boolean().optional().describe("조건 충족 시 굵게"),
+          .describe("Comparison operator for cellValue type"),
+        formula: z.string().optional().describe("Condition value or formula (e.g. '100', '=TODAY()')"),
+        formula2: z.string().optional().describe("Second value for 'between' operator"),
+        fontColor: z.string().optional().describe("Font color RGB hex when met"),
+        bgColor: z.string().optional().describe("Background color RGB hex when met"),
+        bold: z.boolean().optional().describe("Bold when met"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },

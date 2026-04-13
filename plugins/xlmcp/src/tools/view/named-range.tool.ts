@@ -8,13 +8,13 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_named_range",
     {
-      title: "이름 정의 관리",
-      description: "이름 정의(Named Range)를 조회, 생성, 삭제합니다.",
+      title: "Named Ranges",
+      description: "List, create, or delete named ranges.",
       inputSchema: {
         workbook: workbookParam,
-        action: z.enum(["list", "add", "delete"]).describe("동작: list(조회), add(생성), delete(삭제)"),
-        name: z.string().optional().describe("이름 (add/delete 시 필수)"),
-        refersTo: z.string().optional().describe("참조 범위 (add 시 필수, 예: '=Sheet1!$A$1:$D$10')"),
+        action: z.enum(["list", "add", "delete"]).describe("Action: list, add, or delete"),
+        name: z.string().optional().describe("Name (required for add/delete)"),
+        refersTo: z.string().optional().describe("Reference (required for add, e.g. '=Sheet1!$A$1:$D$10')"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },
@@ -49,7 +49,7 @@ export function register(server: McpServer) {
         return textContent({ success: true });
       }
 
-      return textContent({ error: "name과 refersTo(add 시)가 필요합니다." });
+      return textContent({ error: "name and refersTo (for add) are required." });
     }
   );
 }

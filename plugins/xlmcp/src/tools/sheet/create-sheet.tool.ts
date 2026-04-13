@@ -8,12 +8,12 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_create_sheet",
     {
-      title: "시트 추가",
-      description: "새 시트를 추가합니다.",
+      title: "Add Sheet",
+      description: "Add a new sheet.",
       inputSchema: {
         workbook: workbookParam,
-        name: z.string().describe("새 시트 이름"),
-        after: z.string().optional().describe("이 시트 뒤에 추가. 생략 시 맨 뒤"),
+        name: z.string().describe("New sheet name"),
+        after: z.string().optional().describe("Add after this sheet. Appends to end if omitted"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },

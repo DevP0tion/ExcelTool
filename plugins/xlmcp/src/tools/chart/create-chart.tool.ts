@@ -8,18 +8,18 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_create_chart",
     {
-      title: "차트 생성",
-      description: "데이터 범위로 차트를 생성합니다.",
+      title: "Create Chart",
+      description: "Create chart from data range.",
       inputSchema: {
         workbook: workbookParam,
         sheet: sheetParam,
-        dataRange: z.string().describe("차트 데이터 범위 (예: A1:D10)"),
+        dataRange: z.string().describe("Chart data range (e.g. A1:D10)"),
         chartType: z
           .enum(["line", "bar", "column", "pie", "scatter", "area"])
           .default("column")
-          .describe("차트 유형"),
-        title: z.string().optional().describe("차트 제목"),
-        position: z.string().optional().describe("차트 위치 셀 (예: F1). 생략 시 자동"),
+          .describe("Chart type"),
+        title: z.string().optional().describe("Chart title"),
+        position: z.string().optional().describe("Chart position cell (e.g. F1). Auto if omitted"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },

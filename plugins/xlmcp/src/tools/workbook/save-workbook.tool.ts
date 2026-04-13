@@ -8,11 +8,11 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_save_workbook",
     {
-      title: "워크북 저장",
-      description: "워크북을 저장합니다. savePath를 지정하면 다른 이름으로 저장합니다.",
+      title: "Save Workbook",
+      description: "Save workbook. Use savePath for Save As.",
       inputSchema: {
         workbook: workbookParam,
-        savePath: z.string().optional().describe("다른 이름으로 저장할 절대 경로"),
+        savePath: z.string().optional().describe("Absolute path for Save As"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },

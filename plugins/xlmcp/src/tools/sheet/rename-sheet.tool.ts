@@ -8,12 +8,12 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_rename_sheet",
     {
-      title: "시트 이름 변경",
-      description: "시트 이름을 변경합니다.",
+      title: "Rename Sheet",
+      description: "Rename a sheet.",
       inputSchema: {
         workbook: workbookParam,
-        oldName: z.string().describe("현재 시트 이름"),
-        newName: z.string().describe("새 시트 이름"),
+        oldName: z.string().describe("Current sheet name"),
+        newName: z.string().describe("New sheet name"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },

@@ -8,11 +8,11 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_delete_sheet",
     {
-      title: "시트 삭제",
-      description: "시트를 삭제합니다.",
+      title: "Delete Sheet",
+      description: "Delete a sheet.",
       inputSchema: {
         workbook: workbookParam,
-        name: z.string().describe("삭제할 시트 이름"),
+        name: z.string().describe("Sheet name to delete"),
       },
       annotations: { readOnlyHint: false, destructiveHint: true },
     },

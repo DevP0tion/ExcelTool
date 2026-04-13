@@ -7,11 +7,11 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_open_workbook",
     {
-      title: "워크북 열기",
-      description: "파일 경로로 워크북을 엽니다. 이미 열려 있으면 해당 워크북을 활성화합니다.",
+      title: "Open Workbook",
+      description: "Open workbook by path. Activates if already open.",
       inputSchema: {
-        filePath: z.string().describe("Excel 파일 절대 경로 (예: C:\\docs\\data.xlsx)"),
-        readOnly: z.boolean().default(false).describe("읽기 전용으로 열기"),
+        filePath: z.string().describe("Absolute path to Excel file (e.g. C:\\docs\\data.xlsx)"),
+        readOnly: z.boolean().default(false).describe("Open as read-only"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },

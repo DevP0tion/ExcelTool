@@ -8,36 +8,36 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_format_range",
     {
-      title: "범위 서식",
+      title: "Format Range",
       description:
-        "범위에 서식을 적용합니다. 폰트(이름/크기/굵기/기울임/색상), 배경색, 정렬, 테두리, 표시 형식 등을 지정할 수 있습니다.",
+        "Apply formatting: font, background, alignment, borders, number format.",
       inputSchema: {
         workbook: workbookParam,
         sheet: sheetParam,
-        range: z.string().describe("범위 주소 (예: A1:D10)"),
-        fontName: z.string().optional().describe("폰트 이름 (예: '맑은 고딕')"),
-        fontSize: z.number().optional().describe("폰트 크기"),
-        bold: z.boolean().optional().describe("굵게"),
-        italic: z.boolean().optional().describe("기울임"),
-        fontColor: z.string().optional().describe("폰트 색상 RGB hex (예: 'FF0000')"),
-        bgColor: z.string().optional().describe("배경 색상 RGB hex (예: 'FFFF00')"),
+        range: z.string().describe("Range address (e.g. A1:D10)"),
+        fontName: z.string().optional().describe("Font name (e.g. 'Arial')"),
+        fontSize: z.number().optional().describe("Font size"),
+        bold: z.boolean().optional().describe("Bold"),
+        italic: z.boolean().optional().describe("Italic"),
+        fontColor: z.string().optional().describe("Font color RGB hex (e.g. 'FF0000')"),
+        bgColor: z.string().optional().describe("Background color RGB hex (e.g. 'FFFF00')"),
         hAlign: z
           .enum(["left", "center", "right"])
           .optional()
-          .describe("가로 정렬"),
+          .describe("Horizontal alignment"),
         vAlign: z
           .enum(["top", "center", "bottom"])
           .optional()
-          .describe("세로 정렬"),
-        wrapText: z.boolean().optional().describe("텍스트 줄바꿈"),
+          .describe("Vertical alignment"),
+        wrapText: z.boolean().optional().describe("Wrap text"),
         numberFormat: z
           .string()
           .optional()
-          .describe("표시 형식 (예: '#,##0', 'yyyy-mm-dd')"),
+          .describe("Number format (e.g. '#,##0', 'yyyy-mm-dd')"),
         border: z
           .enum(["thin", "medium", "thick", "none"])
           .optional()
-          .describe("전체 테두리 스타일 (간편 옵션)"),
+          .describe("Border style for all edges (shortcut)"),
         borderEdges: z
           .object({
             left: z.enum(["thin", "medium", "thick", "none"]).optional(),
@@ -48,7 +48,7 @@ export function register(server: McpServer) {
             inside: z.enum(["thin", "medium", "thick", "none"]).optional(),
           })
           .optional()
-          .describe("개별 테두리 제어. border와 함께 사용 시 borderEdges가 우선"),
+          .describe("Per-edge border control. Overrides border if both set"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },

@@ -7,8 +7,8 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_list_images",
     {
-      title: "이미지 목록",
-      description: "시트에 삽입된 이미지(Picture) 목록을 반환합니다.",
+      title: "List Images",
+      description: "Returns list of images (Pictures) in the sheet.",
       inputSchema: {
         workbook: workbookParam,
         sheet: sheetParam,

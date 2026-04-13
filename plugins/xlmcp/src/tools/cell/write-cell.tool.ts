@@ -8,13 +8,13 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_write_cell",
     {
-      title: "셀 쓰기",
-      description: "단일 셀에 값 또는 수식을 입력합니다. '='로 시작하면 수식으로 처리됩니다.",
+      title: "Write Cell",
+      description: "Write value or formula to a cell. Starts with '=' for formula.",
       inputSchema: {
         workbook: workbookParam,
         sheet: sheetParam,
-        cell: z.string().describe("셀 주소 (예: A1)"),
-        value: z.string().describe("입력할 값 또는 수식 (예: '=SUM(A1:A10)')"),
+        cell: z.string().describe("Cell address (e.g. A1)"),
+        value: z.string().describe("Value or formula (e.g. '=SUM(A1:A10)')"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },

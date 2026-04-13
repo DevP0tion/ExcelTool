@@ -7,8 +7,8 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_list_sheets",
     {
-      title: "시트 목록",
-      description: "워크북의 모든 시트 이름을 반환합니다.",
+      title: "List Sheets",
+      description: "Returns all sheet names.",
       inputSchema: { workbook: workbookParam },
       annotations: { readOnlyHint: true, destructiveHint: false },
     },

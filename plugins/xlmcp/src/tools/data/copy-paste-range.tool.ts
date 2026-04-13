@@ -14,23 +14,19 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_copy_paste_range",
     {
-      title: "범위 복사/붙여넣기 (값·수식)",
-      description: `범위의 값 또는 수식을 복사하여 대상 위치에 붙여넣습니다.
-시스템 클립보드를 사용하지 않으므로 다른 작업과 안전하게 병렬 실행됩니다.
-
-⚠️ 이 도구는 값(values)과 수식(formulas)만 복사합니다.
-서식(폰트, 색상, 테두리 등)을 복사하려면 excel_copy_paste_format을 사용하세요.`,
+      title: "Copy/Paste Range (Values & Formulas)",
+      description: "Copy/paste values or formulas. No clipboard, parallel-safe.",
       inputSchema: {
         workbook: workbookParam,
         sheet: sheetParam,
-        sourceRange: z.string().describe("원본 범위 (예: A1:C10)"),
-        destCell: z.string().describe("붙여넣기 시작 셀 (예: E1)"),
-        destSheet: z.string().optional().describe("대상 시트. 생략 시 같은 시트"),
+        sourceRange: z.string().describe("Source range (e.g. A1:C10)"),
+        destCell: z.string().describe("Paste start cell (e.g. E1)"),
+        destSheet: z.string().optional().describe("Destination sheet. Same sheet if omitted"),
         pasteType: z
           .enum(["values", "formulas"])
           .default("values")
-          .describe("values: 계산된 값만 복사. formulas: 수식 원본 복사"),
-        chunkSize: z.number().int().optional().describe("청크 분할 행수. 기본 30"),
+          .describe("values: computed values. formulas: original formulas"),
+        chunkSize: z.number().int().optional().describe("Chunk size in rows. Default 30"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },

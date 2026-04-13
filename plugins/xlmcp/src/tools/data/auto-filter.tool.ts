@@ -8,15 +8,15 @@ export function register(server: McpServer) {
   server.registerTool(
     "excel_auto_filter",
     {
-      title: "자동 필터",
-      description: "범위에 자동 필터를 설정하거나 해제합니다. criteria를 지정하면 특정 열에 필터 조건을 적용합니다.",
+      title: "Auto Filter",
+      description: "Set or remove auto filter. Apply criteria to a column.",
       inputSchema: {
         workbook: workbookParam,
         sheet: sheetParam,
-        range: z.string().describe("필터 범위 (예: A1:D100)"),
-        toggle: z.boolean().default(false).describe("true이면 필터 토글 (있으면 해제, 없으면 설정)"),
-        field: z.number().int().optional().describe("필터 적용할 열 번호 (범위 내 1부터)"),
-        criteria: z.string().optional().describe("필터 조건 (예: '>100', 'A사')"),
+        range: z.string().describe("Filter range (e.g. A1:D100)"),
+        toggle: z.boolean().default(false).describe("Toggle filter on/off"),
+        field: z.number().int().optional().describe("Column number to filter (1-based within range)"),
+        criteria: z.string().optional().describe("Filter criteria (e.g. '>100')"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     },
