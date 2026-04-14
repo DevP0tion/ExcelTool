@@ -1,10 +1,12 @@
 {
   "name": "xlmcp",
-  "description": "Excel 자동화 MCP 서버 (48개 도구). 세션 풀링, 가상 클립보드, 청크 병렬 쓰기.",
+  "description": "Excel automation MCP server (49 tools). Session pooling, virtual clipboard, chunked parallel I/O.",
   "version": "0.4.0",
   "userConfig": {
     "pool_size": {
+      "title": "Pool Size",
       "description": "PowerShell session pool size (1-8)",
+      "type": "string",
       "required": false,
       "default": "4"
     }
