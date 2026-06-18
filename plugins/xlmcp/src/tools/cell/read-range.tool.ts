@@ -100,7 +100,7 @@ async function readSingle(
   }
 }
 
-// ── 대규모: 청크 분할 병렬 읽기 ──
+// ── 대규모: 청크 분할 순차 읽기 ──
 async function readChunked(
   wbName: string,
   shName: string,
@@ -123,32 +123,45 @@ async function readChunked(
   );
 
   try {
-    // 병렬 읽기
-    await Promise.all(
-      chunks.map((chunk, i) => {
+    const chunkScripts = chunks
+      .map((chunk, i) => {
         const escapedPath = tmpFiles[i].replace(/\\/g, "\\\\");
         const chunkStartRow = startRow + chunk.offset;
         const chunkEndRow = chunkStartRow + chunk.chunkRows - 1;
         const endCol = startCol + cols - 1;
-
-        return runPS(`
-          $wb = Resolve-Workbook ${wbName}
-          $ws = Resolve-Sheet $wb ${shName}
-          $r = $ws.Range($ws.Cells.Item(${chunkStartRow}, ${startCol}), $ws.Cells.Item(${chunkEndRow}, ${endCol}))
-          $values = $r.Value2
-          ${buildReadScript(chunk.chunkRows, cols)}
-          $json = ConvertTo-Json @($data) -Depth 5 -Compress
-          [System.IO.File]::WriteAllText('${escapedPath}', $json, (New-Object System.Text.UTF8Encoding $false))
-        `);
+        return `
+        $r = $ws.Range($ws.Cells.Item(${chunkStartRow}, ${startCol}), $ws.Cells.Item(${chunkEndRow}, ${endCol}))
+        $values = $r.Value2
+        ${buildReadScript(chunk.chunkRows, cols)}
+        $json = ConvertTo-Json @($data) -Depth 5 -Compress
+        [System.IO.File]::WriteAllText('${escapedPath}', $json, (New-Object System.Text.UTF8Encoding $false))
+        [void][System.Runtime.InteropServices.Marshal]::ReleaseComObject($r)
+        $r = $null`;
       })
-    );
+      .join("\n");
 
-    // TS에서 파일 병합
+    await runPS(`
+      $wb = Resolve-Workbook ${wbName}
+      $ws = Resolve-Sheet $wb ${shName}
+      ${chunkScripts}
+    `);
+
     const allData: unknown[][] = [];
     for (const f of tmpFiles) {
       const chunkData: unknown[][] = JSON.parse(readFileSync(f, "utf-8"));
       allData.push(...chunkData);
     }
+
+    if (allData.length !== rows) {
+      throw new Error(
+        JSON.stringify({
+          error: true,
+          message: `Read length mismatch: expected ${rows} rows, got ${allData.length}`,
+          type: "DataIntegrity",
+        })
+      );
+    }
+
     return allData;
   } finally {
     for (const f of tmpFiles) {

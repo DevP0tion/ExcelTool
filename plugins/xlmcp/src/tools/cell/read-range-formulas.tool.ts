@@ -101,28 +101,44 @@ async function readFormulaChunked(
   const tmpFiles = chunks.map((_, i) => join(tmpdir(), `xlmcp_readf_${batchId}_${i}.json`));
 
   try {
-    await Promise.all(
-      chunks.map((chunk, i) => {
+    const chunkScripts = chunks
+      .map((chunk, i) => {
         const escapedPath = tmpFiles[i].replace(/\\/g, "\\\\");
         const r1 = startRow + chunk.offset;
         const r2 = r1 + chunk.chunkRows - 1;
         const c2 = startCol + cols - 1;
-        return runPS(`
-          $wb = Resolve-Workbook ${wbName}
-          $ws = Resolve-Sheet $wb ${shName}
-          $r = $ws.Range($ws.Cells.Item(${r1}, ${startCol}), $ws.Cells.Item(${r2}, ${c2}))
-          $values = $r.Formula
-          ${buildReadScript(chunk.chunkRows, cols)}
-          $json = ConvertTo-Json @($data) -Depth 5 -Compress
-          [System.IO.File]::WriteAllText('${escapedPath}', $json, (New-Object System.Text.UTF8Encoding $false))
-        `);
+        return `
+        $r = $ws.Range($ws.Cells.Item(${r1}, ${startCol}), $ws.Cells.Item(${r2}, ${c2}))
+        $values = $r.Formula
+        ${buildReadScript(chunk.chunkRows, cols)}
+        $json = ConvertTo-Json @($data) -Depth 5 -Compress
+        [System.IO.File]::WriteAllText('${escapedPath}', $json, (New-Object System.Text.UTF8Encoding $false))
+        [void][System.Runtime.InteropServices.Marshal]::ReleaseComObject($r)
+        $r = $null`;
       })
-    );
+      .join("\n");
+
+    await runPS(`
+      $wb = Resolve-Workbook ${wbName}
+      $ws = Resolve-Sheet $wb ${shName}
+      ${chunkScripts}
+    `);
 
     const allData: unknown[][] = [];
     for (const f of tmpFiles) {
       allData.push(...JSON.parse(readFileSync(f, "utf-8")));
     }
+
+    if (allData.length !== rows) {
+      throw new Error(
+        JSON.stringify({
+          error: true,
+          message: `Read formula length mismatch: expected ${rows} rows, got ${allData.length}`,
+          type: "DataIntegrity",
+        })
+      );
+    }
+
     return allData;
   } finally {
     for (const f of tmpFiles) {

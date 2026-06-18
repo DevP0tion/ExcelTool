@@ -113,7 +113,7 @@ async function writeInline(
   return textContent({ success: true, rows, cols });
 }
 
-// ── 대규모: 청크 분할 + 임시 파일 + 병렬 ──
+// ── 대규모: 청크 분할 + 임시 파일 + 순차 ──
 async function writeChunked(
   wbName: string,
   shName: string,
@@ -160,59 +160,56 @@ async function writeChunked(
   }
 
   try {
-    // ScreenUpdating/Calculation 억제
-    await runPS(`
-      $wb = Resolve-Workbook ${wbName}
-      $excel.ScreenUpdating = $false
-      $excel.Calculation = -4135
-    `);
-
-    // 병렬 쓰기 (General Pool 라운드 로빈)
-    await Promise.all(
-      chunks.map((chunk, i) => {
+    const chunkScripts = chunks
+      .map((chunk, i) => {
         const chunkRows = chunk.chunkData.length;
         const tmpPath = tmpFiles[i].replace(/\\/g, "\\\\");
-
-        return runPS(`
-          $wb = Resolve-Workbook ${wbName}
-          $ws = Resolve-Sheet $wb ${shName}
-          $start = $ws.Range('${psEscape(startCell)}')
-          $chunkStart = $ws.Cells.Item($start.Row + ${chunk.rowOffset}, $start.Column)
-          $chunkEnd = $ws.Cells.Item($start.Row + ${chunk.rowOffset} + ${chunkRows} - 1, $start.Column + ${cols} - 1)
-          $targetRange = $ws.Range($chunkStart, $chunkEnd)
-
-          $json = Get-Content '${tmpPath}' -Raw -Encoding UTF8
-          $data = $json | ConvertFrom-Json
-          $arr = New-Object 'object[,]' ${chunkRows},${cols}
-          for ($i = 0; $i -lt ${chunkRows}; $i++) {
-            for ($j = 0; $j -lt ${cols}; $j++) {
-              $v = $data[$i][$j]
-              if ($v -ne $null) { $arr[$i,$j] = $v }
-            }
+        return `
+        $chunkStart = $ws.Cells.Item($start.Row + ${chunk.rowOffset}, $start.Column)
+        $chunkEnd = $ws.Cells.Item($start.Row + ${chunk.rowOffset} + ${chunkRows} - 1, $start.Column + ${cols} - 1)
+        $targetRange = $ws.Range($chunkStart, $chunkEnd)
+        $json = Get-Content '${tmpPath}' -Raw -Encoding UTF8
+        $data = $json | ConvertFrom-Json
+        $arr = New-Object 'object[,]' ${chunkRows},${cols}
+        for ($i = 0; $i -lt ${chunkRows}; $i++) {
+          for ($j = 0; $j -lt ${cols}; $j++) {
+            $v = $data[$i][$j]
+            if ($v -ne $null) { $arr[$i,$j] = $v }
           }
-          $targetRange.Value2 = $arr
-        `);
+        }
+        $targetRange.Value2 = $arr
+        [void][System.Runtime.InteropServices.Marshal]::ReleaseComObject($targetRange)
+        [void][System.Runtime.InteropServices.Marshal]::ReleaseComObject($chunkEnd)
+        [void][System.Runtime.InteropServices.Marshal]::ReleaseComObject($chunkStart)
+        $targetRange = $null; $chunkEnd = $null; $chunkStart = $null`;
       })
-    );
+      .join("\n");
 
-    // 수식 적용 (청크 완료 후 순차)
-    if (formulas.length > 0) {
-      const formulaCmds = formulas
-        .map(
-          (f) =>
-            `$ws.Cells.Item($start.Row + ${f.rowOffset}, $start.Column + ${f.colOffset}).Formula = '${psEscape(f.formula)}'`
-        )
-        .join("\n        ");
+    const formulaCmds =
+      formulas.length > 0
+        ? formulas
+            .map(
+              (f) =>
+                `$ws.Cells.Item($start.Row + ${f.rowOffset}, $start.Column + ${f.colOffset}).Formula = '${psEscape(f.formula)}'`
+            )
+            .join("\n        ")
+        : "";
 
-      await runPS(`
-        $wb = Resolve-Workbook ${wbName}
-        $ws = Resolve-Sheet $wb ${shName}
-        $start = $ws.Range('${psEscape(startCell)}')
+    await runPS(`
+      $wb = Resolve-Workbook ${wbName}
+      $ws = Resolve-Sheet $wb ${shName}
+      $start = $ws.Range('${psEscape(startCell)}')
+      try {
+        $excel.ScreenUpdating = $false
+        $excel.Calculation = -4135
+        ${chunkScripts}
         ${formulaCmds}
-      `);
-    }
+      } finally {
+        $excel.Calculation = -4105
+        $excel.ScreenUpdating = $true
+      }
+    `);
   } finally {
-    // 임시 파일 정리
     for (const f of tmpFiles) {
       try {
         unlinkSync(f);
@@ -220,12 +217,8 @@ async function writeChunked(
         // ignore
       }
     }
-    // ScreenUpdating/Calculation 복원
-    await runPS(`
-      $wb = Resolve-Workbook ${wbName}
-      $excel.Calculation = -4105
-      $excel.ScreenUpdating = $true
-    `).catch(() => { /* 복원 실패 무시 */ });
+    await runPS(`if ($excel) { $excel.Calculation = -4105; $excel.ScreenUpdating = $true }`)
+      .catch(() => { /* best-effort restoration if PS process died mid-script */ });
   }
 
   return textContent({
@@ -233,6 +226,6 @@ async function writeChunked(
     rows,
     cols,
     chunks: chunks.length,
-    mode: "parallel",
+    mode: "serial",
   });
 }
