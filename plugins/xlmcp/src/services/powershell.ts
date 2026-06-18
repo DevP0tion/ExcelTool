@@ -7,33 +7,161 @@ const HEARTBEAT_INTERVAL = 10_000;
 const INVOKE_TIMEOUT = 30_000;
 
 // ── PS 초기화 스크립트 ──
+// attach-only / 워크북 보유 인스턴스 우선 / 유령-안전 리졸버.
+// INIT은 인스턴스를 생성하지 않는다(지연 바인딩). 첫 도구 호출의 invoke 래퍼가 Ensure-Excel을 돌린다.
+// 이 블록은 scripts/verify-resolver.ps1 의 "XLMCP RESOLVER" 블록과 동일하게 유지할 것.
+// 주의: C# here-string 의 종결자 '@ 와 본문은 반드시 column 0 에서 시작해야 한다(PowerShell here-string 규칙).
 const INIT_SCRIPT = `
+$global:XlmcpOwnsExcel = $false
+$global:excel = $null
+$global:XlmcpExcelClsid = '{00024500-0000-0000-C000-000000000046}'
+
+# ROT helper for cross-instance discovery. Best-effort: degrades to GetActiveObject-only if Add-Type is unavailable.
+$global:XlmcpRotReady = $false
+try {
+  if (-not ([System.Management.Automation.PSTypeName]'XlmcpRot').Type) {
+    Add-Type -Language CSharp -TypeDefinition @'
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
+public class XlmcpRot {
+  [DllImport("ole32.dll")] static extern int GetRunningObjectTable(int r, out IRunningObjectTable t);
+  [DllImport("ole32.dll")] static extern int CreateBindCtx(int r, out IBindCtx c);
+  public static List<object> GetByFilter(string needle) {
+    var res = new List<object>();
+    IRunningObjectTable rot = null;
+    if (GetRunningObjectTable(0, out rot) != 0 || rot == null) return res;
+    IEnumMoniker en = null; rot.EnumRunning(out en); if (en == null) return res; en.Reset();
+    IMoniker[] m = new IMoniker[1];
+    while (en.Next(1, m, IntPtr.Zero) == 0) {
+      IBindCtx ctx = null; string dn = null;
+      try {
+        CreateBindCtx(0, out ctx);
+        try { m[0].GetDisplayName(ctx, null, out dn); } catch {}
+        if (dn != null && needle != null && dn.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0) {
+          object o = null;
+          try { if (rot.GetObject(m[0], out o) == 0 && o != null) res.Add(o); } catch {}
+        }
+      } finally {
+        if (ctx != null) Marshal.ReleaseComObject(ctx);
+        if (m[0] != null) Marshal.ReleaseComObject(m[0]);
+      }
+    }
+    Marshal.ReleaseComObject(en);
+    Marshal.ReleaseComObject(rot);
+    return res;
+  }
+}
+'@
+  }
+  $global:XlmcpRotReady = $true
+} catch { $global:XlmcpRotReady = $false }
+
+function Get-XlmcpWbCount {
+  param($app)
+  if (-not $app) { return -1 }
+  try { return [int]$app.Workbooks.Count } catch { return -1 }
+}
+
+function Test-XlmcpExcelRunning {
+  # True if any Excel process exists. Lets callers tell "nothing open" from "running but unbindable".
+  try { return (@(Get-Process EXCEL -ErrorAction SilentlyContinue).Count -gt 0) } catch { return $false }
+}
+
+function Find-WorkbookBearingExcel {
+  # Excel.Application with >=1 workbook, or $null. NEVER creates.
+  $candidates = New-Object System.Collections.ArrayList
   try {
-    $excel = [System.Runtime.InteropServices.Marshal]::GetActiveObject("Excel.Application")
-  } catch {
-    $excel = New-Object -ComObject Excel.Application
-    $excel.Visible = $true
+    $a = [System.Runtime.InteropServices.Marshal]::GetActiveObject('Excel.Application')
+    if ($a) { [void]$candidates.Add($a) }
+  } catch {}
+  if ($global:XlmcpRotReady) {
+    try { foreach ($a in [XlmcpRot]::GetByFilter($global:XlmcpExcelClsid)) { if ($a) { [void]$candidates.Add($a) } } } catch {}
+    try { foreach ($wb in [XlmcpRot]::GetByFilter('.xls')) { try { if ($wb.Application) { [void]$candidates.Add($wb.Application) } } catch {} } } catch {}
   }
-  $excel.DisplayAlerts = $false
+  # Most workbooks wins (first-wins on tie). Assumes a single user Excel instance
+  # (the report's scenario); two equal-count instances could diverge across sessions.
+  $best = $null; $bestCount = 0
+  foreach ($c in $candidates) {
+    $n = Get-XlmcpWbCount $c
+    if ($n -gt $bestCount) { $bestCount = $n; $best = $c }
+  }
+  return $best
+}
 
-  function Resolve-Workbook {
-    param([string]$Name)
-    if ($Name -and $Name -ne "") {
-      return $excel.Workbooks.Item($Name)
-    }
-    if (-not $excel.ActiveWorkbook) {
-      throw "No workbook is open."
-    }
-    return $excel.ActiveWorkbook
+function Find-AnyExcel {
+  # ANY running Excel.Application (even empty), or $null. NEVER creates.
+  try {
+    $a = [System.Runtime.InteropServices.Marshal]::GetActiveObject('Excel.Application')
+    if ($a) { return $a }
+  } catch {}
+  if ($global:XlmcpRotReady) {
+    try { foreach ($a in [XlmcpRot]::GetByFilter($global:XlmcpExcelClsid)) { if ($a) { return $a } } } catch {}
+    try { foreach ($wb in [XlmcpRot]::GetByFilter('.xls')) { try { if ($wb.Application) { return $wb.Application } } catch {} } } catch {}
   }
+  return $null
+}
 
-  function Resolve-Sheet {
-    param($wb, [string]$SheetName)
-    if ($SheetName -and $SheetName -ne "") {
-      return $wb.Worksheets.Item($SheetName)
-    }
-    return $wb.ActiveSheet
+function Ensure-Excel {
+  param([switch]$AllowCreate)
+  # Keep current binding while it still holds workbooks (fast steady-state path).
+  if ($global:excel) {
+    $n = Get-XlmcpWbCount $global:excel
+    if ($n -gt 0) { return $global:excel }
+    if ($n -lt 0) { $global:excel = $null }
   }
+  # Prefer the user's workbook-bearing instance.
+  $wbApp = Find-WorkbookBearingExcel
+  if ($wbApp) {
+    $global:excel = $wbApp
+    try { $global:excel.DisplayAlerts = $false } catch {}
+    return $global:excel
+  }
+  if ($AllowCreate) {
+    if (-not $global:excel) { $global:excel = Find-AnyExcel }   # attach to an existing instance before creating
+    if (-not $global:excel) {
+      $global:excel = New-Object -ComObject Excel.Application
+      $global:excel.Visible = $true
+      $global:XlmcpOwnsExcel = $true                            # only OUR creations are ownable
+    }
+    try { $global:excel.DisplayAlerts = $false } catch {}
+    return $global:excel
+  }
+  return $null   # attach-only: nothing open -> caller throws a clean message
+}
+
+function Resolve-Workbook {
+  param([string]$Name)
+  $app = Ensure-Excel
+  if (-not $app) {
+    if (Test-XlmcpExcelRunning) {
+      throw "Excel is running but XLMCP could not bind to a workbook-bearing instance (the workbook may not be registered in the COM Running Object Table). Try re-saving the workbook, or close and reopen it via excel_open_workbook."
+    }
+    throw "No workbook is open. Open a workbook in Excel first, or use excel_open_workbook / excel_create_workbook."
+  }
+  if ($Name -and $Name -ne "") { return $app.Workbooks.Item($Name) }
+  if ($app.ActiveWorkbook) { return $app.ActiveWorkbook }
+  if ((Get-XlmcpWbCount $app) -gt 0) { return $app.Workbooks.Item(1) }
+  throw "No workbook is open."
+}
+
+function Resolve-Sheet {
+  param($wb, [string]$SheetName)
+  if ($SheetName -and $SheetName -ne "") { return $wb.Worksheets.Item($SheetName) }
+  return $wb.ActiveSheet
+}
+
+function Invoke-XlmcpDispose {
+  # Quit ONLY XLMCP-created (owned) empty instances. NEVER quit a user instance (preserve data).
+  if ($global:excel) {
+    if ($global:XlmcpOwnsExcel) {
+      try { if ((Get-XlmcpWbCount $global:excel) -eq 0) { $global:excel.Quit() } } catch {}
+    }
+    try { [System.Runtime.InteropServices.Marshal]::ReleaseComObject($global:excel) | Out-Null } catch {}
+    $global:excel = $null
+  }
+}
 `;
 
 // ── 개별 세션 ──
@@ -59,6 +187,9 @@ class Session {
     this.busy = true;
     const wrapped = `
       try {
+        # Re-bind to the workbook-bearing instance every call so all sessions converge on the user's instance.
+        # attach-only: if nothing is open, \$global:excel stays \$null and each tool handles it.
+        Ensure-Excel | Out-Null
         ${script}
       } catch {
         try { [Console]::Error.WriteLine(($_ | ConvertTo-Json -Compress)) } catch { [Console]::Error.WriteLine($_.Exception.Message) }
@@ -87,7 +218,10 @@ class Session {
   async healthCheck(): Promise<boolean> {
     if (this.busy || !this.alive) return this.alive;
     try {
-      await Session.withTimeout(this.ps.invoke("$excel.Version"), 5000);
+      // PS 프로세스 생존만 확인 (Excel 비의존).
+      // attach-only 지연 바인딩에서 $excel 은 워크북 작업 전까지 $null 이므로
+      // $excel.Version 로 검사하면 워크북 미오픈 상태를 "죽음"으로 오판해 세션이 끝없이 재생성된다.
+      await Session.withTimeout(this.ps.invoke("$PID"), 5000);
       return true;
     } catch {
       this.alive = false;
@@ -98,12 +232,9 @@ class Session {
   async dispose(): Promise<void> {
     try {
       // 정리 invoke에도 타임아웃 적용 (블로킹 PS 방어)
+      // 소유권 기반: 우리가 만든 빈 인스턴스만 Quit. 사용자 인스턴스는 보존(데이터 유실 방지).
       await Session.withTimeout(
-        this.ps.invoke(`
-          if ($excel) {
-            [System.Runtime.InteropServices.Marshal]::ReleaseComObject($excel) | Out-Null
-          }
-        `),
+        this.ps.invoke("if (Get-Command Invoke-XlmcpDispose -ErrorAction SilentlyContinue) { Invoke-XlmcpDispose }"),
         5000
       );
     } catch { /* ignore */ }

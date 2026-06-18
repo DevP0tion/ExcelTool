@@ -13,11 +13,15 @@ export function register(server: McpServer) {
     },
     async () => {
       const raw = await runPS(`
-        $result = @()
-        foreach ($wb in $excel.Workbooks) {
-          $result += @{ Name = $wb.Name; Path = $wb.FullName; Sheets = $wb.Worksheets.Count } | ConvertTo-Json -Compress
+        if (-not $excel) {
+          "[]"
+        } else {
+          $result = @()
+          foreach ($wb in $excel.Workbooks) {
+            $result += @{ Name = $wb.Name; Path = $wb.FullName; Sheets = $wb.Worksheets.Count } | ConvertTo-Json -Compress
+          }
+          "[" + ($result -join ",") + "]"
         }
-        "[" + ($result -join ",") + "]"
       `);
       return textContent(parseJSON(raw));
     }

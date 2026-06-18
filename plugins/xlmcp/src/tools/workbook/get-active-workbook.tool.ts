@@ -13,8 +13,7 @@ export function register(server: McpServer) {
     },
     async () => {
       const raw = await runPS(`
-        $wb = $excel.ActiveWorkbook
-        if (-not $wb) { throw "No workbook is open." }
+        $wb = Resolve-Workbook ""
         $vbaTrusted = $false
         try { $null = $wb.VBProject.VBComponents.Count; $vbaTrusted = $true } catch {}
         @{

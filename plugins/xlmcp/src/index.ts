@@ -37,14 +37,26 @@ registerVbaTools(server);
 // stdio transport
 const transport = new StdioServerTransport();
 
-process.on("SIGINT", async () => {
-  await dispose();
-  process.exit(0);
-});
+// 종료 정리 (중복 dispose 방지 가드).
+// SIGINT/SIGTERM 외에 SIGHUP·stdin close/end 도 처리해 비정상 종료(stdio 파이프 끊김)에서도 정리한다.
+// 참고: 'exit' 이벤트는 동기만 가능해 비동기 PS dispose 를 끝낼 수 없으므로 다루지 않는다.
+// attach-only 설계상 init 단계에서 인스턴스를 만들지 않으므로, 정리 실패해도 유령은 발생하지 않는다.
+let shuttingDown = false;
+async function shutdown(code = 0): Promise<void> {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  try {
+    await dispose();
+  } catch {
+    /* ignore */
+  }
+  process.exit(code);
+}
 
-process.on("SIGTERM", async () => {
-  await dispose();
-  process.exit(0);
-});
+process.on("SIGINT", () => { void shutdown(0); });
+process.on("SIGTERM", () => { void shutdown(0); });
+process.on("SIGHUP", () => { void shutdown(0); });
+process.stdin.on("close", () => { void shutdown(0); });
+process.stdin.on("end", () => { void shutdown(0); });
 
 await server.connect(transport);

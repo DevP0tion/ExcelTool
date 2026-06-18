@@ -17,6 +17,7 @@ export function register(server: McpServer) {
     },
     async ({ filePath, readOnly }) => {
       const raw = await runPS(`
+        Ensure-Excel -AllowCreate | Out-Null
         $path = '${psEscape(filePath)}'
         $existing = $null
         foreach ($wb in $excel.Workbooks) {

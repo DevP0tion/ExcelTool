@@ -19,6 +19,7 @@ export function register(server: McpServer) {
         ? `$wb.SaveAs('${psEscape(savePath)}')`
         : "";
       const raw = await runPS(`
+        Ensure-Excel -AllowCreate | Out-Null
         $wb = $excel.Workbooks.Add()
         ${saveCmd}
         @{ Name = $wb.Name; Path = $wb.FullName } | ConvertTo-Json -Compress
