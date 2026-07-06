@@ -12,8 +12,8 @@ Excel을 직접 제어하는 MCP 서버.
 ### Claude Code (플러그인)
 
 ```
-/plugin marketplace add DevP0tion/XLMCP
-/plugin install xlmcp@XLMCP
+/plugin marketplace add DevP0tion/DevP0tion
+/plugin install xlmcp@devp0tion
 ```
 
 ### Claude Desktop
